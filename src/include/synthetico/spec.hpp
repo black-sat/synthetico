@@ -22,24 +22,59 @@
 // SOFTWARE.
 //
 
+#ifndef SYNTH_SPEC_HPP
+#define SYNTH_SPEC_HPP
+
+#include <functional>
+#include <string>
+#include <optional>
+#include <ostream>
+
 #include <black/logic/logic.hpp>
 
-#include <synthetico/synth.hpp>
+namespace synth {
+  
+  namespace logic = black::logic;
 
-#include <iostream>
+  using FG = logic::make_fragment_t<
+    logic::syntax_list<
+      logic::syntax_element::eventually,
+      logic::syntax_element::always
+    >
+  >;
 
-int main(int argc, char **argv) {
+  using pLTL = logic::make_combined_fragment_t<
+    logic::propositional,
+    logic::make_fragment_t<
+      logic::syntax_list<
+        logic::syntax_element::yesterday,
+        logic::syntax_element::w_yesterday,
+        logic::syntax_element::since,
+        logic::syntax_element::triggered,
+        logic::syntax_element::once,
+        logic::syntax_element::historically
+      >
+    >
+  >;
 
-  black::alphabet sigma;
+  struct spec {
+    using type_t = logic::formula<FG>::type;
+    
+    type_t type;
+    logic::formula<pLTL> formula;
+    std::vector<logic::proposition> inputs;
+    std::vector<logic::proposition> outputs;
+  };
 
-  synth::spec spec = *synth::parse(sigma, argc, argv, [&](auto err) {
-    std::cerr << argv[0] << ": error: " + err + "\n";
-    std::cerr << argv[0] << ": usage: " << argv[0];
-    std::cerr << " <formula> <input 1> <input 2> ... <input n>\n";
-    exit(1);
-  });
+  std::ostream &operator<<(std::ostream &ostr, spec s);
 
-  std::cout << encode(spec);
+  std::optional<spec> 
+  parse(
+    black::alphabet &sigma,
+    int argc, char **argv,
+    std::function<void(std::string)> error
+  );
 
-  return 0;
 }
+
+#endif // SYNTH_SPEC_HPP

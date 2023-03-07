@@ -20,55 +20,12 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+//
 
-#include <functional>
-#include <string>
-#include <optional>
-#include <ostream>
+#ifndef SYNTH_SYNTH_HPP
+#define SYNTH_SYNTH_HPP
 
-#include <black/logic/logic.hpp>
+#include <synthetico/spec.hpp>
+#include <synthetico/automata.hpp>
 
-namespace synth {
-  
-  namespace logic = black::logic;
-
-  using FG = logic::make_fragment_t<
-    logic::syntax_list<
-      logic::syntax_element::eventually,
-      logic::syntax_element::always
-    >
-  >;
-
-  using pLTL = logic::make_combined_fragment_t<
-    logic::propositional,
-    logic::make_fragment_t<
-      logic::syntax_list<
-        logic::syntax_element::yesterday,
-        logic::syntax_element::w_yesterday,
-        logic::syntax_element::since,
-        logic::syntax_element::triggered,
-        logic::syntax_element::once,
-        logic::syntax_element::historically
-      >
-    >
-  >;
-
-  struct spec {
-    using type_t = logic::formula<FG>::type;
-    
-    type_t type;
-    logic::formula<pLTL> formula;
-    std::vector<logic::proposition> inputs;
-    std::vector<logic::proposition> outputs;
-  };
-
-  std::ostream &operator<<(std::ostream &ostr, spec s);
-
-  std::optional<spec> 
-  parse(
-    black::alphabet &sigma,
-    int argc, char **argv,
-    std::function<void(std::string)> error
-  );
-
-}
+#endif // SYNTH_SYNTH_HPP

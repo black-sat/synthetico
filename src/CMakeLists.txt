@@ -25,6 +25,7 @@ set (
   LIB_SRC
   src/main.cpp 
   src/synth.cpp
+  src/automata.cpp
 )
 
 add_executable (synthetico ${LIB_SRC})

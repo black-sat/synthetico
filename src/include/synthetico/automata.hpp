@@ -22,24 +22,56 @@
 // SOFTWARE.
 //
 
+#ifndef SYNTH_AUTOMATA_HPP
+#define SYNTH_AUTOMATA_HPP
+
 #include <black/logic/logic.hpp>
 
 #include <synthetico/synth.hpp>
 
-#include <iostream>
+namespace synth {
+  
+  namespace logic = black::logic;
 
-int main(int argc, char **argv) {
+  struct automata {
+    using formula = logic::formula<logic::propositional>;
 
-  black::alphabet sigma;
+    std::vector<logic::proposition> inputs;
+    std::vector<logic::proposition> outputs;
+    std::vector<logic::proposition> variables;
 
-  synth::spec spec = *synth::parse(sigma, argc, argv, [&](auto err) {
-    std::cerr << argv[0] << ": error: " + err + "\n";
-    std::cerr << argv[0] << ": usage: " << argv[0];
-    std::cerr << " <formula> <input 1> <input 2> ... <input n>\n";
-    exit(1);
-  });
+    formula init;
+    formula trans;
+    formula objective;
+  };
 
-  std::cout << encode(spec);
+  std::ostream &operator<<(std::ostream &, automata);
 
-  return 0;
+  struct primed_t {
+    black::identifier label;
+
+    bool operator==(primed_t const&) const = default;
+  };
+
+  inline std::string to_string(primed_t p) {
+    return "{" + to_string(p.label) + "}'";
+  }
+
+  inline black::proposition primed(black::proposition p) {
+    return p.sigma()->proposition(primed_t{p.name()});
+  }
+
+  automata encode(spec sp);
+
 }
+
+namespace std {
+  template<>
+  struct hash<::synth::primed_t> {
+    size_t operator()(::synth::primed_t p) {
+      return std::hash<::black::identifier>{}(p.label);
+    }
+  };
+}
+
+#endif // SYNTH_AUTOMATA_HPP
