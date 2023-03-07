@@ -29,19 +29,16 @@
 
 int main(int argc, char **argv) {
 
-  if(argc < 2) {
-    std::cerr << argv[0] << ": error: please provide a formula\n";
-    return 1;
-  }
-
   black::alphabet sigma;
 
-  synth::spec spec = *synth::parse(sigma, argv[1], [&](auto err) {
+  synth::spec spec = *synth::parse(sigma, argc, argv, [&](auto err) {
     std::cerr << argv[0] << ": error: " + err + "\n";
+    std::cerr << argv[0] << ": usage: " << argv[0];
+    std::cerr << " <formula> <input 1> <input 2> ... <input n>\n";
     exit(1);
   });
 
-  std::cout << to_string(spec) << "\n";
+  std::cout << spec;
 
   return 0;
 }

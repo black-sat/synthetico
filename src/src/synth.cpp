@@ -27,11 +27,13 @@
 #include <black/logic/parser.hpp>
 #include <black/logic/prettyprint.hpp>
 
+#include <unordered_set>
+
 namespace synth {
   
 
-  std::string to_string(spec s) {
-    return s.type.match(
+  std::ostream &operator<<(std::ostream &ostr, spec s) {
+    std::string formula =  s.type.match(
       [&](spec::type_t::eventually) {
         return "F(" + to_string(s.formula) + ")";
       },
@@ -39,14 +41,30 @@ namespace synth {
         return "G(" + to_string(s.formula) + ")";
       }
     );
+
+    ostr << "formula: " << formula << "\n";
+    ostr << "inputs: \n";
+    for(auto i : s.inputs)
+      ostr << "- " << to_string(i) << "\n";
+    ostr << "outputs: \n";
+    for(auto o : s.outputs)
+      ostr << "- " << to_string(o) << "\n";
+
+    return ostr;
   }
 
   std::optional<spec> 
   parse(
     black::alphabet &sigma,
-    std::string formula, std::function<void(std::string)> error
+    int argc, char **argv,
+    std::function<void(std::string)> error
   ) {
-    auto f = black::parse_formula(sigma, formula, error);
+    if(argc < 2) {
+      error("insufficient command-line arguments");
+      return std::nullopt;
+    }
+
+    auto f = black::parse_formula(sigma, argv[1], error);
 
     if(!f)
       return std::nullopt;
@@ -60,7 +78,28 @@ namespace synth {
           return std::nullopt;
         }
 
-        return spec{ .type = t, .formula = *arg};
+        std::unordered_set<logic::proposition> iset;
+        for(int i = 2; i < argc; i++)
+          iset.insert(sigma.proposition(std::string(argv[i])));
+
+        std::unordered_set<logic::proposition> oset;
+        logic::for_each_child_deep(*arg, [&](auto child) {
+          child.match(
+            [&](logic::proposition p) {
+              if(iset.find(p) == iset.end())
+                oset.insert(p);
+            },
+            [](logic::otherwise) { }
+          );
+        });
+
+        std::vector<logic::proposition> inputs(iset.begin(), iset.end());
+        std::vector<logic::proposition> outputs(oset.begin(), oset.end());
+
+        return spec{ 
+          .type = t, .formula = *arg, 
+          .inputs = inputs, .outputs = outputs
+        };
       },
       [&](black::otherwise) {
         error("only F(pLTL) or G(pLTL) formulas are supported");

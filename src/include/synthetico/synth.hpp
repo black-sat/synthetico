@@ -24,6 +24,7 @@
 #include <functional>
 #include <string>
 #include <optional>
+#include <ostream>
 
 #include <black/logic/logic.hpp>
 
@@ -54,16 +55,20 @@ namespace synth {
 
   struct spec {
     using type_t = logic::formula<FG>::type;
+    
     type_t type;
     logic::formula<pLTL> formula;
+    std::vector<logic::proposition> inputs;
+    std::vector<logic::proposition> outputs;
   };
 
-  std::string to_string(spec s);
+  std::ostream &operator<<(std::ostream &ostr, spec s);
 
   std::optional<spec> 
   parse(
     black::alphabet &sigma,
-    std::string formula, std::function<void(std::string)> error
+    int argc, char **argv,
+    std::function<void(std::string)> error
   );
 
 }

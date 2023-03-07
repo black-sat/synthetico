@@ -37,5 +37,8 @@ target_include_directories(synthetico PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 
+set_property(TARGET synthetico PROPERTY OUTPUT_NAME synth)
+set_property(TARGET synthetico PROPERTY RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
 target_compile_features(synthetico PUBLIC cxx_std_20)
 target_enable_warnings(synthetico)
