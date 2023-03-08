@@ -46,40 +46,6 @@ namespace synth {
     logic::formula<logic::propositional> matrix;
   };
 
-  struct dependency {
-    var_t var;
-    std::vector<var_t> deps;
-
-    bool operator==(dependency const&) const = default;
-  };
-
-  static std::string to_string(dependency const& dep) {
-    std::stringstream str;
-    
-    str << "d " << dep.var << " ";
-    for(var_t d : dep.deps)
-      str << d << " ";
-    str << "0";
-
-    return str.str();
-  }
-
-}
-
-namespace std {
-  template<>
-  struct hash<::synth::dependency> {
-    size_t operator()(::synth::dependency dep) const {
-      using ::synth::var_t;
-      size_t h = std::hash<var_t>{}(dep.var);
-
-      for(var_t var : dep.deps) {
-        h = black_internal::hash_combine(h, std::hash<var_t>{}(var));
-      }
-      
-      return h;
-    }
-  };
 }
 
 namespace synth {
@@ -88,9 +54,18 @@ namespace synth {
     std::vector<lit_t> literals;
   };
 
-  struct dqdimacs {
-    std::vector<var_t> universals;
-    std::vector<dependency> existentials;
+  struct qdimacs_block {
+    enum {
+      existential,
+      universal
+    } type;
+
+    std::vector<var_t> variables;
+  };
+
+  struct qdimacs {
+    size_t n_vars;
+    std::vector<qdimacs_block> blocks;
     std::vector<clause> clauses;
 
     std::unordered_map<var_t, proposition> props;
@@ -115,10 +90,27 @@ namespace synth {
   }
 
   [[maybe_unused]]
-  static dqdimacs clausify(prenex_qbf qbf) {
+  static std::string to_string(black::cnf cnf) {
+    std::stringstream str;
+
+    for(black::clause cl : cnf.clauses) {
+      str << " ∧\n";
+      for(auto [sign, prop] : cl.literals) {
+        if(sign)
+          str << "  ∨ " << to_string(!prop) << "\n";
+        else
+          str << "  ∨ " << to_string(prop) << "\n";
+      }
+    }
+
+    return str.str();
+  }
+
+  [[maybe_unused]]
+  static qdimacs clausify(prenex_qbf qbf) {
     black::cnf cnf = black::to_cnf(qbf.matrix);
 
-    std::cout << to_string(to_formula(*qbf.matrix.sigma(), cnf)) << "\n";
+    //std::cout << to_string(cnf) << "\n";
 
     std::unordered_map<var_t, proposition> props;
     std::unordered_map<proposition, var_t> vars;
@@ -144,66 +136,66 @@ namespace synth {
       clauses.push_back(clause{literals});
     }
 
-    std::unordered_set<var_t> universals;
-    std::unordered_set<var_t> existentials;
-    std::unordered_set<dependency> deps;
+    std::vector<qdimacs_block> blocks;
+    std::unordered_set<var_t> declared_vars;
 
     // quantifiers
     for(auto block : qbf.blocks) {
-      if(block.node_type() == quantifier_t::foreach{}) {
-        for(auto p : block.variables())
-          universals.insert(vars[p]);
-      } else {
-        for(auto p : block.variables()) {
-          existentials.insert(vars[p]);
-          deps.insert(dependency{
-            vars[p], std::vector(universals.begin(), universals.end())
-          });
-        }
+      
+      std::vector<var_t> block_vars;
+      for(auto p : block.variables()) {
+        declared_vars.insert(vars[p]);
+        block_vars.push_back(vars[p]);
       }
+
+      if(block.node_type() == quantifier_t::thereis{})
+        blocks.push_back(qdimacs_block{qdimacs_block::existential, block_vars});
+      else
+        blocks.push_back(qdimacs_block{qdimacs_block::universal, block_vars});
+
     }
 
     // quantifiers for Tseitin variables
+    std::unordered_set<var_t> last;
     for(auto cl : cnf.clauses) {
       for(auto [sign, prop] : cl.literals) {
         var_t var = vars[prop];
-        if(!existentials.contains(var)) {
-          existentials.insert(var);
-          deps.insert(dependency{var, {}});
+        if(!declared_vars.contains(var)) {
+          last.insert(var);
         }
       }
     }
+    if(!last.empty())
+      blocks.push_back(qdimacs_block{
+        qdimacs_block::existential, std::vector(last.begin(), last.end())
+      });
 
-
-    return dqdimacs{
-      std::vector(universals.begin(), universals.end()), 
-      std::vector(deps.begin(), deps.end()), 
-      clauses, props, vars
-    };
+    return qdimacs{next_var - 1, blocks, clauses, props, vars};
   }
 
   std::string dimacs(qbf f) {
     prenex_qbf qbf = prenex(f);
-    dqdimacs dqd = clausify(qbf);
+    qdimacs qd = clausify(qbf);
 
     std::stringstream str;
 
     // header
-    str << "p cnf " << dqd.universals.size() + dqd.existentials.size() 
-        << " " << dqd.clauses.size() << "\n";
+    str << "p cnf " << qd.n_vars << " " << qd.clauses.size() << "\n";
 
-    // universal quantifiers
-    str << "a ";
-    for(var_t var : dqd.universals)
-      str << var << " ";
-    str << "0\n";
+    // quantifiers
+    for(auto block : qd.blocks) {
+      if(block.type == qdimacs_block::existential)
+        str << "e ";
+      else
+        str << "a ";
 
-    // existential quantifiers
-    for(auto dep : dqd.existentials)
-      str << to_string(dep) << "\n";
+      for(var_t var : block.variables) 
+        str << var << " ";
+      str << "0\n";
+    }
 
     // clauses
-    for(clause cl : dqd.clauses) {
+    for(clause cl : qd.clauses) {
       for(lit_t lit : cl.literals) {
         str << lit << " ";
       }

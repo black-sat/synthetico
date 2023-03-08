@@ -196,8 +196,8 @@ namespace synth {
     automata aut = encode(sp);
     qbf formula = encoder{sigma, aut}.encode(player_t::controller, sp.type, n);
 
-    std::cout << "\nEncoding at n = " << n << "\n";
-    std::cout << to_string(formula) << "\n";
+    // std::cout << "\nEncoding at n = " << n << "\n";
+    // std::cout << to_string(formula) << "\n";
 
     std::cout << "\n" << dimacs(formula) << "\n";
 
