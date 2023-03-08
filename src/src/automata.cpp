@@ -260,7 +260,7 @@ namespace synth {
     }
     
     str << "\noutputs:\n";
-    for(auto out : aut.inputs) {
+    for(auto out : aut.outputs) {
       str << "- " << to_string(out) << "\n";
     }
 

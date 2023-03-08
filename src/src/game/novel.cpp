@@ -191,13 +191,15 @@ namespace synth {
 
     alphabet &sigma = *sp.formula.sigma();
 
+    size_t n = 3;
+
     automata aut = encode(sp);
-    qbf formula = encoder{sigma, aut}.encode(player_t::controller, sp.type, 3);
+    qbf formula = encoder{sigma, aut}.encode(player_t::controller, sp.type, n);
 
-    // std::cout << "\nEncoding at n = 1:\n";
-    // std::cout << to_string(formula) << "\n";
+    std::cout << "\nEncoding at n = " << n << "\n";
+    std::cout << to_string(formula) << "\n";
 
-    std::cout << dimacs(formula) << "\n";
+    std::cout << "\n" << dimacs(formula) << "\n";
 
     return false;
   }

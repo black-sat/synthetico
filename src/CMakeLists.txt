@@ -24,7 +24,7 @@
 set (
   LIB_SRC
   src/main.cpp 
-  src/synth.cpp
+  src/spec.cpp
   src/automata.cpp
   src/qbf.cpp
   src/game/novel.cpp

@@ -25,10 +25,12 @@
 #include <synthetico/synthetico.hpp>
 
 #include <black/logic/cnf.hpp>
+#include <black/logic/prettyprint.hpp>
 
 #include <unordered_map>
 #include <unordered_set>
 #include <sstream>
+#include <iostream>
 
 namespace synth {
 
@@ -115,6 +117,8 @@ namespace synth {
   [[maybe_unused]]
   static dqdimacs clausify(prenex_qbf qbf) {
     black::cnf cnf = black::to_cnf(qbf.matrix);
+
+    std::cout << to_string(to_formula(*qbf.matrix.sigma(), cnf)) << "\n";
 
     std::unordered_map<var_t, proposition> props;
     std::unordered_map<proposition, var_t> vars;
