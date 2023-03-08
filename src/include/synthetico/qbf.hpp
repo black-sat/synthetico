@@ -33,6 +33,8 @@ namespace synth {
 
   using qbf = logic::formula<logic::QBF>;
 
+  std::string dimacs(qbf f);
+  
   bool is_sat(qbf f);
 
 }

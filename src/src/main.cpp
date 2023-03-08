@@ -39,8 +39,8 @@ int main(int argc, char **argv) {
     exit(1);
   });
 
-  std::cout << "Symbolic automata for: " << argv[1] << "\n\n";
-  std::cout << encode(spec);
+  // std::cout << "Symbolic automata for: " << argv[1] << "\n\n";
+  // std::cout << encode(spec);
 
   is_realizable_novel(spec);
 

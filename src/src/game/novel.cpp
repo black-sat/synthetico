@@ -34,13 +34,6 @@ namespace synth {
 
   using namespace logic::fragments::propositional;
 
-  using Quant = logic::make_fragment_t<
-    logic::syntax_list<
-      logic::syntax_element::thereis,
-      logic::syntax_element::foreach
-    >
-  >;
-
   using game_t = spec::type_t;
 
   enum class player_t {
@@ -201,8 +194,10 @@ namespace synth {
     automata aut = encode(sp);
     qbf formula = encoder{sigma, aut}.encode(player_t::controller, sp.type, 3);
 
-    std::cout << "Encoding at n = 1:\n";
-    std::cout << to_string(formula) << "\n";
+    // std::cout << "\nEncoding at n = 1:\n";
+    // std::cout << to_string(formula) << "\n";
+
+    std::cout << dimacs(formula) << "\n";
 
     return false;
   }
