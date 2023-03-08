@@ -26,6 +26,30 @@
 
 namespace synth {
 
+  namespace logic = black::logic;
+
+  struct prenex_qbf {
+    std::vector<logic::qbf<logic::QBF>> blocks;
+    logic::formula<logic::propositional> matrix;
+  };
+
+  static std::optional<prenex_qbf> prenex(qbf f) 
+  {
+    std::vector<logic::qbf<logic::QBF>> blocks;
+    qbf matrix = f;
+
+    while(matrix.is<logic::qbf<logic::QBF>>()) {
+      auto q = *matrix.to<logic::qbf<logic::QBF>>();
+      blocks.push_back(q);
+      matrix = q.matrix();
+    }
+
+    if(auto m = matrix.to<logic::qbf<logic::propositional>>(); m)
+      return prenex_qbf{blocks, *m};
+
+    return {};
+  }
+
   bool is_sat(logic::formula<logic::QBF>) {
     return false;
   }

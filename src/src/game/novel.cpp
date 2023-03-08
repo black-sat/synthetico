@@ -41,7 +41,6 @@ namespace synth {
     >
   >;
 
-  using qbf = logic::formula<logic::QBF>;
   using game_t = spec::type_t;
 
   enum class player_t {

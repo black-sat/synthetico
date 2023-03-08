@@ -31,8 +31,9 @@ namespace synth {
   
   namespace logic = black::logic;
 
-  
-  bool is_sat(logic::formula<logic::QBF> f);
+  using qbf = logic::formula<logic::QBF>;
+
+  bool is_sat(qbf f);
 
 }
 
