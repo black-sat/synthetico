@@ -22,25 +22,12 @@
 // SOFTWARE.
 //
 
-#include <black/logic/logic.hpp>
-
 #include <synthetico/synthetico.hpp>
 
-#include <iostream>
+namespace synth {
 
-int main(int argc, char **argv) {
+  bool is_realizable_novel(spec) {
+    return false;
+  }
 
-  black::alphabet sigma;
-
-  synth::spec spec = *synth::parse(sigma, argc, argv, [&](auto err) {
-    std::cerr << argv[0] << ": error: " + err + "\n";
-    std::cerr << argv[0] << ": usage: " << argv[0];
-    std::cerr << " <formula> <input 1> <input 2> ... <input n>\n";
-    exit(1);
-  });
-
-  std::cout << "Symbolic automata for: " << argv[1] << "\n\n";
-  std::cout << encode(spec);
-
-  return 0;
 }

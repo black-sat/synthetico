@@ -22,10 +22,15 @@
 // SOFTWARE.
 //
 
-#ifndef SYNTH_SYNTH_HPP
-#define SYNTH_SYNTH_HPP
+#ifndef SYNTH_GAME_NOVEL_HPP
+#define SYNTH_GAME_NOVEL_HPP
 
-#include <synthetico/spec.hpp>
-#include <synthetico/automata.hpp>
+#include <synthetico/synthetico.hpp>
 
-#endif // SYNTH_SYNTH_HPP
+namespace synth {
+
+  bool is_realizable_novel(spec sp);
+
+}
+
+#endif // SYNTH_GAME_NOVEL_HPP

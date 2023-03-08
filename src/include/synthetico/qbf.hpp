@@ -22,25 +22,18 @@
 // SOFTWARE.
 //
 
+#ifndef SYNTH_QBF_HPP
+#define SYNTH_QBF_HPP
+
 #include <black/logic/logic.hpp>
 
-#include <synthetico/synthetico.hpp>
+namespace synth {
+  
+  namespace logic = black::logic;
 
-#include <iostream>
+  
+  bool is_sat(logic::formula<logic::QBF> f);
 
-int main(int argc, char **argv) {
-
-  black::alphabet sigma;
-
-  synth::spec spec = *synth::parse(sigma, argc, argv, [&](auto err) {
-    std::cerr << argv[0] << ": error: " + err + "\n";
-    std::cerr << argv[0] << ": usage: " << argv[0];
-    std::cerr << " <formula> <input 1> <input 2> ... <input n>\n";
-    exit(1);
-  });
-
-  std::cout << "Symbolic automata for: " << argv[1] << "\n\n";
-  std::cout << encode(spec);
-
-  return 0;
 }
+
+#endif // SYNTH_QBF_HPP

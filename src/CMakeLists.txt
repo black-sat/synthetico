@@ -26,6 +26,8 @@ set (
   src/main.cpp 
   src/synth.cpp
   src/automata.cpp
+  src/qbf.cpp
+  src/game/novel.cpp
 )
 
 add_executable (synthetico ${LIB_SRC})
