@@ -27,13 +27,41 @@
 
 #include <black/logic/logic.hpp>
 
+#include <unordered_map>
+
 namespace synth {
   
   namespace logic = black::logic;
 
   using qbf = logic::formula<logic::QBF>;
 
-  std::string dimacs(qbf f);
+  using var_t = uint32_t;
+  using lit_t = int64_t;
+
+  struct clause {
+    std::vector<lit_t> literals;
+  };
+
+  struct qdimacs_block {
+    enum {
+      existential,
+      universal
+    } type;
+
+    std::vector<var_t> variables;
+  };
+
+  struct qdimacs {
+    size_t n_vars;
+    std::vector<qdimacs_block> blocks;
+    std::vector<clause> clauses;
+
+    std::unordered_map<var_t, logic::proposition> props;
+    std::unordered_map<logic::proposition, var_t> vars;
+  };
+
+  qdimacs clausify(qbf f);
+  std::string to_string(qdimacs qd);
   
   bool is_sat(qbf f);
 

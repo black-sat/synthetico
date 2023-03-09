@@ -22,15 +22,20 @@
 // SOFTWARE.
 //
 
-#ifndef SYNTH_GAME_NOVEL_HPP
-#define SYNTH_GAME_NOVEL_HPP
+#ifndef SYNTH_BACKEND_HPP
+#define SYNTH_BACKEND_HPP
 
-#include <synthetico/synthetico.hpp>
+#include <black/support/tribool.hpp>
 
 namespace synth {
 
-  black::tribool is_realizable_novel(spec sp);
+  enum class backend_t {
+    pedant,
+    dqbdd
+  };
+
+  black::tribool solve(qdimacs const& qd);
 
 }
 
-#endif // SYNTH_GAME_NOVEL_HPP
+#endif // SYNTH_BACKEND_HPP

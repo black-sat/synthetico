@@ -27,6 +27,7 @@ set (
   src/spec.cpp
   src/automata.cpp
   src/qbf.cpp
+  src/backend.cpp
   src/game/novel.cpp
 )
 

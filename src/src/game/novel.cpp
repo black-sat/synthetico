@@ -63,7 +63,7 @@ namespace synth {
       static 
       std::vector<proposition> stepped(std::vector<proposition> props, size_t n);
 
-      formula win(game_t type, size_t n);
+      formula win(player_t player, game_t type, size_t n);
       formula unravel(size_t n);
 
       qbf encode(player_t player, game_t type, size_t n);
@@ -114,32 +114,40 @@ namespace synth {
       return result;
     }
 
-    formula encoder::win(game_t type, size_t n) {
-      return type.match(
+    formula encoder::win(player_t player, game_t type, size_t n) {
+      formula objective = player == 
+        player_t::controller ? aut.objective : !aut.objective;
+
+      bool reach = type.match(
         [&](game_t::eventually) {
-          return big_or(sigma, black::range(0, n + 1), [&](auto i) {
-            return stepped(aut.objective, i);
-          });
+          return player == player_t::controller;
         },
         [&](game_t::always) {
-          return big_or(sigma, black::range(0, n), [&](auto k) {
-            auto loop = big_or(sigma, black::range(0, k), [&](auto j) {
-              auto ell = [&](auto p) {
-                return iff(stepped(p, k), stepped(p, j));
-              };
-              return 
-                big_and(sigma, aut.inputs, ell) &&
-                big_and(sigma, aut.outputs, ell);
-            });
-
-            auto safety = big_and(sigma, black::range(0, k + 1), [&](auto w) {
-              return stepped(aut.objective, w);
-            });
-
-            return loop && safety;
-          });
+          return player == player_t::environment;
         }
       );
+
+      if(reach)
+        return big_or(sigma, black::range(0, n + 1), [&](auto i) {
+          return stepped(objective, i);
+        });
+      
+      return big_or(sigma, black::range(0, n), [&](auto k) {
+        auto loop = big_or(sigma, black::range(0, k), [&](auto j) {
+          auto ell = [&](auto p) {
+            return iff(stepped(p, k), stepped(p, j));
+          };
+          return 
+            big_and(sigma, aut.inputs, ell) &&
+            big_and(sigma, aut.outputs, ell);
+        });
+
+        auto safety = big_and(sigma, black::range(0, k + 1), [&](auto w) {
+          return stepped(objective, w);
+        });
+
+        return loop && safety;
+      });
     }
 
     formula encoder::unravel(size_t n) {
@@ -154,8 +162,9 @@ namespace synth {
     {
       using quantifier_t = logic::qbf<logic::QBF>::type;
 
-      qbf result = 
-        logic::thereis(stepped(aut.variables, n), unravel(n) && win(type, n));
+      qbf result = logic::thereis(stepped(aut.variables, n), 
+        unravel(n) && win(player, type, n)
+      );
 
       // defaults for Controller
       std::vector<proposition> first = aut.outputs;
@@ -164,8 +173,8 @@ namespace synth {
       quantifier_t qsecond = quantifier_t::foreach{};
 
       if(player == player_t::environment) {
-        first = aut.inputs;
-        second = aut.outputs;
+        first = aut.outputs;
+        second = aut.inputs;
         qfirst = quantifier_t::foreach{};
         qsecond = quantifier_t::thereis{};
       }
@@ -187,21 +196,34 @@ namespace synth {
     }
   }
 
-  bool is_realizable_novel(spec sp) {
+  black::tribool is_realizable_novel(spec sp) {
 
     alphabet &sigma = *sp.formula.sigma();
 
-    size_t n = 3;
-
     automata aut = encode(sp);
-    qbf formula = encoder{sigma, aut}.encode(player_t::controller, sp.type, n);
 
-    // std::cout << "\nEncoding at n = " << n << "\n";
-    // std::cout << to_string(formula) << "\n";
+    size_t n = 3;
+    while(true) {
+      qbf formulaC = 
+        encoder{sigma, aut}.encode(player_t::controller, sp.type, n);
+      qdimacs qdC = clausify(formulaC);
+      qbf formulaE = 
+        encoder{sigma, aut}.encode(player_t::environment, sp.type, n);
+      qdimacs qdE = clausify(formulaE);
 
-    std::cout << "\n" << dimacs(formula) << "\n";
+      // std::cout << "\nEnvironment ecoding at n = " << n << "\n";
+      // std::cout << to_string(formulaE) << "\n";
 
-    return false;
+      //std::cout << "\n" << to_string(qd) << "\n";
+
+      if(solve(qdC) == true)
+        return true;
+      
+      if(solve(qdE) == true)
+        return false;
+      
+      n++;
+    }    
   }
 
 }

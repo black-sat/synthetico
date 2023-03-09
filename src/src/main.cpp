@@ -42,7 +42,21 @@ int main(int argc, char **argv) {
   // std::cout << "Symbolic automata for: " << argv[1] << "\n\n";
   // std::cout << encode(spec);
 
-  is_realizable_novel(spec);
+  black::tribool result = black::tribool::undef;
+
+  try {
+    result = is_realizable_novel(spec);
+  } catch(std::exception const& ex) {
+    std::cerr << argv[0] << ": uncaught exception: " << ex.what() << "\n";
+  }
+
+  if(result == true)
+    std::cout << "REALIZABLE\n";
+  else if(result == false)
+    std::cout << "UNREALIZABLE\n";
+  else 
+    std::cout << "UNKNOWN\n";
+
 
   return 0;
 }

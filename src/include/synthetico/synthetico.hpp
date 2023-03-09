@@ -28,6 +28,7 @@
 #include <synthetico/spec.hpp>
 #include <synthetico/automata.hpp>
 #include <synthetico/qbf.hpp>
+#include <synthetico/backend.hpp>
 #include <synthetico/game/novel.hpp>
 
 #endif // SYNTH_SYNTH_HPP

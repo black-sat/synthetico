@@ -38,38 +38,10 @@ namespace synth {
   using namespace logic::fragments::propositional;
   using quantifier_t = logic::qbf<logic::QBF>::type;
 
-  using var_t = uint32_t;
-  using lit_t = int64_t;
 
   struct prenex_qbf {
     std::vector<logic::qbf<logic::QBF>> blocks;
     logic::formula<logic::propositional> matrix;
-  };
-
-}
-
-namespace synth {
-
-  struct clause {
-    std::vector<lit_t> literals;
-  };
-
-  struct qdimacs_block {
-    enum {
-      existential,
-      universal
-    } type;
-
-    std::vector<var_t> variables;
-  };
-
-  struct qdimacs {
-    size_t n_vars;
-    std::vector<qdimacs_block> blocks;
-    std::vector<clause> clauses;
-
-    std::unordered_map<var_t, proposition> props;
-    std::unordered_map<proposition, var_t> vars;
   };
 
   static prenex_qbf prenex(qbf f) 
@@ -106,8 +78,10 @@ namespace synth {
     return str.str();
   }
 
-  [[maybe_unused]]
-  static qdimacs clausify(prenex_qbf qbf) {
+  qdimacs clausify(qbf f) {
+
+    prenex_qbf qbf = prenex(f);
+
     black::cnf cnf = black::to_cnf(qbf.matrix);
 
     //std::cout << to_string(cnf) << "\n";
@@ -173,10 +147,7 @@ namespace synth {
     return qdimacs{next_var - 1, blocks, clauses, props, vars};
   }
 
-  std::string dimacs(qbf f) {
-    prenex_qbf qbf = prenex(f);
-    qdimacs qd = clausify(qbf);
-
+  std::string to_string(qdimacs qd) {
     std::stringstream str;
 
     // header
