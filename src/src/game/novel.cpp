@@ -202,6 +202,8 @@ namespace synth {
 
     automata aut = encode(sp);
 
+    std::cout << aut << "\n";
+
     size_t n = 3;
     while(true) {
       qbf formulaC = 
@@ -211,8 +213,8 @@ namespace synth {
         encoder{sigma, aut}.encode(player_t::environment, sp.type, n);
       qdimacs qdE = clausify(formulaE);
 
-      // std::cout << "\nEnvironment ecoding at n = " << n << "\n";
-      // std::cout << to_string(formulaE) << "\n";
+      std::cout << "n = " << n << "\n";
+      std::cout << "encoding: " << to_string(formulaC) << "\n";
 
       //std::cout << "\n" << to_string(qd) << "\n";
 

@@ -26,6 +26,8 @@
 
 #include <black/logic/prettyprint.hpp>
 
+#include <unordered_set>
+
 namespace synth {
   
   using namespace logic;
@@ -126,46 +128,55 @@ namespace synth {
     }
 
     void encoder::collect(spec sp) {
+
+      std::unordered_set<proposition> _variables;
+      std::unordered_set<yesterday<pLTL>> _yreqs;
+      std::unordered_set<w_yesterday<pLTL>> _zreqs;
+
       sp.type.match(
         [&](spec::type_t::eventually) {
-          variables.push_back(ground(Y(sp.formula)));
-          yreqs.push_back(Y(sp.formula));
+          _variables.insert(ground(Y(sp.formula)));
+          _yreqs.insert(Y(sp.formula));
         },
         [&](spec::type_t::always) {
-          variables.push_back(ground(Z(sp.formula)));
-          zreqs.push_back(Z(sp.formula));    
+          _variables.insert(ground(Z(sp.formula)));
+          _zreqs.insert(Z(sp.formula));    
         }
       );    
 
       for_each_child_deep(sp.formula, [&](auto child) {
         child.match(
           [&](yesterday<pLTL> y) {
-            variables.push_back(ground(y));
-            yreqs.push_back(y);
+            _variables.insert(ground(y));
+            _yreqs.insert(y);
           },
           [&](w_yesterday<pLTL> z) {
-            variables.push_back(ground(z));
-            zreqs.push_back(z);
+            _variables.insert(ground(z));
+            _zreqs.insert(z);
           },
           [&](since<pLTL> s) {
-            variables.push_back(ground(Y(s)));
-            yreqs.push_back(Y(s));
+            _variables.insert(ground(Y(s)));
+            _yreqs.insert(Y(s));
           },
           [&](triggered<pLTL> s) {
-            variables.push_back(ground(Z(s)));
-            zreqs.push_back(Z(s));
+            _variables.insert(ground(Z(s)));
+            _zreqs.insert(Z(s));
           },
           [&](once<pLTL> o) {
-            variables.push_back(ground(Y(o)));
-            yreqs.push_back(Y(o));
+            _variables.insert(ground(Y(o)));
+            _yreqs.insert(Y(o));
           },
           [&](historically<pLTL> h) {
-            variables.push_back(ground(Z(h)));
-            zreqs.push_back(Z(h));
+            _variables.insert(ground(Z(h)));
+            _zreqs.insert(Z(h));
           },
           [](otherwise) { }
         );
       });
+
+      variables.insert(variables.begin(), _variables.begin(), _variables.end());
+      yreqs.insert(yreqs.begin(), _yreqs.begin(), _yreqs.end());
+      zreqs.insert(zreqs.begin(), _zreqs.begin(), _zreqs.end());
     }
 
     proposition encoder::ground(formula<pLTL> f) {
