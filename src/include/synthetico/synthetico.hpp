@@ -25,10 +25,12 @@
 #ifndef SYNTH_SYNTH_HPP
 #define SYNTH_SYNTH_HPP
 
+#include <synthetico/common.hpp>
 #include <synthetico/spec.hpp>
 #include <synthetico/automata.hpp>
 #include <synthetico/qbf.hpp>
 #include <synthetico/backend.hpp>
 #include <synthetico/game/novel.hpp>
+#include <synthetico/game/classic.hpp>
 
 #endif // SYNTH_SYNTH_HPP

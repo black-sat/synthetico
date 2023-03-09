@@ -22,50 +22,62 @@
 // SOFTWARE.
 //
 
-#ifndef SYNTH_SPEC_HPP
-#define SYNTH_SPEC_HPP
+#include <synthetico/synthetico.hpp>
 
 #include <functional>
-#include <string>
-#include <optional>
-#include <ostream>
 
-#include <black/logic/logic.hpp>
+#include <iostream>
 
 namespace synth {
-  
-  namespace logic = black::logic;
 
-  using pLTL = logic::make_combined_fragment_t<
-    Bool,
-    logic::make_fragment_t<
-      logic::syntax_list<
-        logic::syntax_element::yesterday,
-        logic::syntax_element::w_yesterday,
-        logic::syntax_element::since,
-        logic::syntax_element::triggered,
-        logic::syntax_element::once,
-        logic::syntax_element::historically
-      >
-    >
-  >;
+  namespace { 
 
-  struct spec {    
-    game_t type;
-    logic::formula<pLTL> formula;
-    std::vector<proposition> inputs;
-    std::vector<proposition> outputs;
-  };
+    struct encoder {
 
-  std::ostream &operator<<(std::ostream &ostr, spec s);
+      qbformula fixpoint(size_t n);
 
-  std::optional<spec> 
-  parse(
-    black::alphabet &sigma,
-    int argc, char **argv,
-    std::function<void(std::string)> error
-  );
+      logic::alphabet &sigma;
+      game_t type;
+      automata aut;
+    };
+
+    qbformula encoder::fixpoint(size_t n) {
+      using namespace logic::fragments::QBF;
+
+      using op_t = logic::binary<Bool>::type;
+
+      if(n == 0)
+        return aut.objective;
+
+      op_t op = type.match(
+        [](game_t::eventually) { return op_t::disjunction{}; },
+        [](game_t::always) { return op_t::conjunction{}; }
+      );
+
+      return 
+        binary(op, 
+          fixpoint(n - 1), 
+          foreach(aut.outputs,
+            thereis(aut.inputs,
+              foreach(primed(aut.variables),
+                implies(aut.trans, primed(fixpoint(n - 1)))
+              )
+            )
+          )
+        );
+    }
+
+  }
+
+
+  black::tribool is_realizable_classic(spec sp) {
+    automata aut = encode(sp);
+
+    qbformula qbf = encoder{*aut.init.sigma(), sp.type, aut}.fixpoint(2);
+
+    std::cout << to_string(qbf) << "\n";
+
+    return black::tribool::undef;
+  }
 
 }
-
-#endif // SYNTH_SPEC_HPP

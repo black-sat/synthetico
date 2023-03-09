@@ -35,10 +35,10 @@ namespace synth {
 
   std::ostream &operator<<(std::ostream &ostr, spec s) {
     std::string formula =  s.type.match(
-      [&](spec::type_t::eventually) {
+      [&](game_t::eventually) {
         return "F(" + to_string(s.formula) + ")";
       },
-      [&](spec::type_t::always) {
+      [&](game_t::always) {
         return "G(" + to_string(s.formula) + ")";
       }
     );
@@ -72,30 +72,30 @@ namespace synth {
 
     return f->match(
       [&](black::only<FG> fg) -> std::optional<spec> {
-        spec::type_t t = fg.node_type();
-        auto arg = fg.to<black::unary>()->argument().to<logic::formula<pLTL>>();
+        game_t t = fg.node_type();
+        auto arg = fg.to<black::unary>()->argument().to<formula<pLTL>>();
         if(!arg) {
           error("only F(pLTL) or G(pLTL) formulas are supported");
           return std::nullopt;
         }
 
-        std::unordered_set<logic::proposition> iset;
+        std::unordered_set<proposition> iset;
         for(int i = 2; i < argc; i++)
           iset.insert(sigma.proposition(std::string(argv[i])));
 
-        std::unordered_set<logic::proposition> oset;
-        logic::for_each_child_deep(*arg, [&](auto child) {
+        std::unordered_set<proposition> oset;
+        for_each_child_deep(*arg, [&](auto child) {
           child.match(
-            [&](logic::proposition p) {
+            [&](proposition p) {
               if(iset.find(p) == iset.end())
                 oset.insert(p);
             },
-            [](logic::otherwise) { }
+            [](otherwise) { }
           );
         });
 
-        std::vector<logic::proposition> inputs(iset.begin(), iset.end());
-        std::vector<logic::proposition> outputs(oset.begin(), oset.end());
+        std::vector<proposition> inputs(iset.begin(), iset.end());
+        std::vector<proposition> outputs(oset.begin(), oset.end());
 
         return spec{ 
           .type = t, .formula = *arg, 

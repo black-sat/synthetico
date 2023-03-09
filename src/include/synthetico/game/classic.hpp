@@ -22,50 +22,15 @@
 // SOFTWARE.
 //
 
-#ifndef SYNTH_SPEC_HPP
-#define SYNTH_SPEC_HPP
+#ifndef SYNTH_GAME_CLASSIC_HPP
+#define SYNTH_GAME_CLASSIC_HPP
 
-#include <functional>
-#include <string>
-#include <optional>
-#include <ostream>
-
-#include <black/logic/logic.hpp>
+#include <black/support/tribool.hpp>
 
 namespace synth {
-  
-  namespace logic = black::logic;
 
-  using pLTL = logic::make_combined_fragment_t<
-    Bool,
-    logic::make_fragment_t<
-      logic::syntax_list<
-        logic::syntax_element::yesterday,
-        logic::syntax_element::w_yesterday,
-        logic::syntax_element::since,
-        logic::syntax_element::triggered,
-        logic::syntax_element::once,
-        logic::syntax_element::historically
-      >
-    >
-  >;
-
-  struct spec {    
-    game_t type;
-    logic::formula<pLTL> formula;
-    std::vector<proposition> inputs;
-    std::vector<proposition> outputs;
-  };
-
-  std::ostream &operator<<(std::ostream &ostr, spec s);
-
-  std::optional<spec> 
-  parse(
-    black::alphabet &sigma,
-    int argc, char **argv,
-    std::function<void(std::string)> error
-  );
+  black::tribool is_realizable_classic(spec sp);  
 
 }
 
-#endif // SYNTH_SPEC_HPP
+#endif // SYNTH_GAME_CLASSIC_HPP

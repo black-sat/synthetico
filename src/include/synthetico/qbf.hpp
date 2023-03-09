@@ -33,7 +33,7 @@ namespace synth {
   
   namespace logic = black::logic;
 
-  using qbf = logic::formula<logic::QBF>;
+  using qbformula = formula<QBF>;
 
   using var_t = uint32_t;
   using lit_t = int64_t;
@@ -56,14 +56,14 @@ namespace synth {
     std::vector<qdimacs_block> blocks;
     std::vector<clause> clauses;
 
-    std::unordered_map<var_t, logic::proposition> props;
-    std::unordered_map<logic::proposition, var_t> vars;
+    std::unordered_map<var_t, proposition> props;
+    std::unordered_map<proposition, var_t> vars;
   };
 
-  qdimacs clausify(qbf f);
+  qdimacs clausify(qbformula f);
   std::string to_string(qdimacs qd);
   
-  bool is_sat(qbf f);
+  bool is_sat(qbformula f);
 
 }
 

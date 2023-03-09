@@ -24,11 +24,13 @@
 set (
   LIB_SRC
   src/main.cpp 
+  src/common.cpp
   src/spec.cpp
   src/automata.cpp
   src/qbf.cpp
   src/backend.cpp
   src/game/novel.cpp
+  src/game/classic.cpp
 )
 
 add_executable (synthetico ${LIB_SRC})

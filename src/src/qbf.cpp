@@ -36,29 +36,27 @@ namespace synth {
 
   namespace logic = black::logic;
   using namespace logic::fragments::propositional;
-  using quantifier_t = logic::qbf<logic::QBF>::type;
 
-
-  struct prenex_qbf {
-    std::vector<logic::qbf<logic::QBF>> blocks;
-    logic::formula<logic::propositional> matrix;
+  struct prenex_qbformula {
+    std::vector<qbf> blocks;
+    bformula matrix;
   };
 
-  static prenex_qbf prenex(qbf f) 
+  static prenex_qbformula prenex(qbformula f) 
   {
-    std::vector<logic::qbf<logic::QBF>> blocks;
-    qbf matrix = f;
+    std::vector<qbf> blocks;
+    qbformula matrix = f;
 
-    while(matrix.is<logic::qbf<logic::QBF>>()) {
-      auto q = *matrix.to<logic::qbf<logic::QBF>>();
+    while(matrix.is<qbf>()) {
+      auto q = *matrix.to<qbf>();
       blocks.push_back(q);
       matrix = q.matrix();
     }
 
-    auto m = matrix.to<logic::formula<logic::propositional>>();
+    auto m = matrix.to<bformula>();
     black_assert(m.has_value());
     
-    return prenex_qbf{blocks, *m};
+    return prenex_qbformula{blocks, *m};
   }
 
   [[maybe_unused]]
@@ -78,11 +76,11 @@ namespace synth {
     return str.str();
   }
 
-  qdimacs clausify(qbf f) {
+  qdimacs clausify(qbformula f) {
 
-    prenex_qbf qbf = prenex(f);
+    prenex_qbformula qbformula = prenex(f);
 
-    black::cnf cnf = black::to_cnf(qbf.matrix);
+    black::cnf cnf = black::to_cnf(qbformula.matrix);
 
     //std::cout << to_string(cnf) << "\n";
 
@@ -114,7 +112,7 @@ namespace synth {
     std::unordered_set<var_t> declared_vars;
 
     // quantifiers
-    for(auto block : qbf.blocks) {
+    for(auto block : qbformula.blocks) {
       
       std::vector<var_t> block_vars;
       for(auto p : block.variables()) {
@@ -177,7 +175,7 @@ namespace synth {
   }
 
 
-  bool is_sat(qbf) {
+  bool is_sat(qbformula) {
     return false;
   }
 

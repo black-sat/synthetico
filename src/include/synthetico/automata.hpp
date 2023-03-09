@@ -34,32 +34,16 @@ namespace synth {
   namespace logic = black::logic;
 
   struct automata {
-    using formula = logic::formula<logic::propositional>;
+    std::vector<proposition> inputs;
+    std::vector<proposition> outputs;
+    std::vector<proposition> variables;
 
-    std::vector<logic::proposition> inputs;
-    std::vector<logic::proposition> outputs;
-    std::vector<logic::proposition> variables;
-
-    formula init;
-    formula trans;
-    formula objective;
+    bformula init;
+    bformula trans;
+    bformula objective;
   };
 
   std::ostream &operator<<(std::ostream &, automata);
-
-  struct primed_t {
-    black::identifier label;
-
-    bool operator==(primed_t const&) const = default;
-  };
-
-  inline std::string to_string(primed_t p) {
-    return "{" + to_string(p.label) + "}'";
-  }
-
-  inline black::proposition primed(black::proposition p) {
-    return p.sigma()->proposition(primed_t{p.name()});
-  }
 
   automata encode(spec sp);
 

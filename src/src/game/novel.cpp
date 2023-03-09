@@ -32,91 +32,29 @@
 
 namespace synth {
 
-  using namespace logic::fragments::propositional;
-
-  using game_t = spec::type_t;
-
   enum class player_t {
     controller,
     environment
   };
 
-  struct stepped_t {
-    logic::proposition prop;
-    size_t step;
-
-    bool operator==(stepped_t const&) const = default;
-  };
-
-  static std::string to_string(stepped_t s) {
-    return to_string(s.prop) + ", " + std::to_string(s.step);
-  }
-
   namespace {
     struct encoder {
 
-      //static formula win(game_t type, size_t n);
+      bformula win(player_t player, game_t type, size_t n);
+      bformula unravel(size_t n);
 
-      static proposition stepped(proposition p, size_t n);
-      static formula stepped(formula f, size_t n);
-      
-      static 
-      std::vector<proposition> stepped(std::vector<proposition> props, size_t n);
-
-      formula win(player_t player, game_t type, size_t n);
-      formula unravel(size_t n);
-
-      qbf encode(player_t player, game_t type, size_t n);
+      qbformula encode(player_t player, game_t type, size_t n);
 
       logic::alphabet &sigma;
       automata aut;
 
     };
 
-    proposition encoder::stepped(proposition p, size_t n) {
-      if(auto pp = p.name().to<primed_t>(); pp.has_value()) {
-        return stepped(p.sigma()->proposition(pp->label), n + 1);
-      }
-      
-      return p.sigma()->proposition(stepped_t{p, n});
-    }
+    bformula encoder::win(player_t player, game_t type, size_t n) {
+      using namespace logic;
 
-    formula encoder::stepped(formula f, size_t n) {
-      return f.match(
-        [](boolean b) { return b; },
-        [&](proposition p) {
-          return stepped(p, n); 
-        },
-        [&](negation, auto arg) {
-          return !stepped(arg, n);
-        },
-        [&](conjunction, auto left, auto right) { 
-          return stepped(left, n) && stepped(right, n);
-        },
-        [&](disjunction, auto left, auto right) {
-          return stepped(left, n) || stepped(right, n);
-        },
-        [&](implication, auto left, auto right) {
-          return implies(stepped(left, n), stepped(right, n));
-        },
-        [&](iff, auto left, auto right) {
-          return iff(stepped(left, n), stepped(right, n));
-        }
-      );
-    }
-
-    std::vector<proposition> 
-    encoder::stepped(std::vector<proposition> props, size_t n) {
-      std::vector<proposition> result;
-      for(auto p : props)
-        result.push_back(stepped(p, n));
-      
-      return result;
-    }
-
-    formula encoder::win(player_t player, game_t type, size_t n) {
-      formula objective = player == 
-        player_t::controller ? aut.objective : !aut.objective;
+      bformula objective = 
+        player == player_t::controller ? aut.objective : !aut.objective;
 
       bool reach = type.match(
         [&](game_t::eventually) {
@@ -150,7 +88,7 @@ namespace synth {
       });
     }
 
-    formula encoder::unravel(size_t n) {
+    bformula encoder::unravel(size_t n) {
       return 
         stepped(aut.init, 0) &&
         big_and(sigma, black::range(0, n), [&](auto i) {
@@ -158,11 +96,11 @@ namespace synth {
         });
     }
 
-    qbf encoder::encode(player_t player, game_t type, size_t n) 
+    qbformula encoder::encode(player_t player, game_t type, size_t n) 
     {
-      using quantifier_t = logic::qbf<logic::QBF>::type;
+      using namespace logic::fragments::QBF;
 
-      qbf result = logic::thereis(stepped(aut.variables, n), 
+      qbformula result = thereis(stepped(aut.variables, n), 
         unravel(n) && win(player, type, n)
       );
 
@@ -183,9 +121,9 @@ namespace synth {
         size_t step = n - i - 1;
         
         result = 
-          logic::thereis(stepped(aut.variables, step),
-            logic::qbf<logic::QBF>(qfirst, stepped(first, step),
-              logic::qbf<logic::QBF>(qsecond, stepped(second, step),
+          thereis(stepped(aut.variables, step),
+            qbf(qfirst, stepped(first, step),
+              qbf(qsecond, stepped(second, step),
                 result
               )
             )
@@ -198,7 +136,7 @@ namespace synth {
 
   black::tribool is_realizable_novel(spec sp) {
 
-    alphabet &sigma = *sp.formula.sigma();
+    logic::alphabet &sigma = *sp.formula.sigma();
 
     automata aut = encode(sp);
 
@@ -206,10 +144,11 @@ namespace synth {
 
     size_t n = 3;
     while(true) {
-      qbf formulaC = 
+      qbformula formulaC = 
         encoder{sigma, aut}.encode(player_t::controller, sp.type, n);
       qdimacs qdC = clausify(formulaC);
-      qbf formulaE = 
+      
+      qbformula formulaE = 
         encoder{sigma, aut}.encode(player_t::environment, sp.type, n);
       qdimacs qdE = clausify(formulaE);
 
@@ -228,16 +167,4 @@ namespace synth {
     }    
   }
 
-}
-
-namespace std {
-  template<>
-  struct hash<::synth::stepped_t> {
-    size_t operator()(::synth::stepped_t s) {
-      return ::black_internal::hash_combine(
-        std::hash<::black::proposition>{}(s.prop),
-        std::hash<size_t>{}(s.step)
-      );
-    }
-  };
 }

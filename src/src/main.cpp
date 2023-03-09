@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
   black::tribool result = black::tribool::undef;
 
   try {
-    result = is_realizable_novel(spec);
+    result = is_realizable_classic(spec);
   } catch(std::exception const& ex) {
     std::cerr << argv[0] << ": uncaught exception: " << ex.what() << "\n";
   }

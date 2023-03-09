@@ -30,8 +30,6 @@
 
 namespace synth {
   
-  using namespace logic;
-
   namespace {
     struct encoder {
 
@@ -43,83 +41,83 @@ namespace synth {
 
       static formula<pLTL> lift(proposition p);
 
-      static automata::formula snf(formula<pLTL> f);
+      static bformula snf(formula<pLTL> f);
 
       automata encode(spec sp);
 
-      std::vector<yesterday<pLTL>> yreqs;
-      std::vector<w_yesterday<pLTL>> zreqs;
+      std::vector<logic::yesterday<pLTL>> yreqs;
+      std::vector<logic::w_yesterday<pLTL>> zreqs;
       std::vector<proposition> variables;
 
     };
   
     formula<pLTL> encoder::nnf(formula<pLTL> f) {
       return f.match(
-        [](boolean b) { return b; },
+        [](logic::boolean b) { return b; },
         [](proposition p) { return p; },
-        [](disjunction<pLTL>, auto left, auto right) {
+        [](logic::disjunction<pLTL>, auto left, auto right) {
           return nnf(left) || nnf(right);
         },
-        [](conjunction<pLTL>, auto left, auto right) {
+        [](logic::conjunction<pLTL>, auto left, auto right) {
           return nnf(left) && nnf(right);
         },
-        [](implication<pLTL>, auto left, auto right) {
+        [](logic::implication<pLTL>, auto left, auto right) {
           return nnf(!left || right);
         },
-        [](iff<pLTL>, auto left, auto right) {
+        [](logic::iff<pLTL>, auto left, auto right) {
           return nnf(implies(left, right) && implies(right, left));
         },
-        [](yesterday<pLTL>, auto arg) {
+        [](logic::yesterday<pLTL>, auto arg) {
           return Y(nnf(arg));
         },
-        [](w_yesterday<pLTL>, auto arg) {
+        [](logic::w_yesterday<pLTL>, auto arg) {
           return Z(nnf(arg));
         },
-        [](once<pLTL>, auto arg) {
+        [](logic::once<pLTL>, auto arg) {
           return O(nnf(arg));
         },
-        [](historically<pLTL>, auto arg) {
+        [](logic::historically<pLTL>, auto arg) {
           return H(nnf(arg));
         },
-        [](since<pLTL>, auto left, auto right) {
+        [](logic::since<pLTL>, auto left, auto right) {
           return S(nnf(left), nnf(right));
         },
-        [](triggered<pLTL>, auto left, auto right) {
+        [](logic::triggered<pLTL>, auto left, auto right) {
           return T(nnf(left), nnf(right));
         },
-        [](negation<pLTL>, auto arg) {
+        [](logic::negation<pLTL>, auto arg) {
           return arg.match(
-            [](boolean b) { return b.sigma()->boolean(!b.value()); },
-            [](proposition p) { return !p; },
-            [](negation<pLTL>, auto op) { return op; },
-            [](disjunction<pLTL>, auto left, auto right) {
+            [](logic::boolean b) { return b.sigma()->boolean(!b.value()); },
+            [](logic::proposition p) { return !p; },
+            [](logic::negation<pLTL>, auto op) { return op; },
+            [](logic::disjunction<pLTL>, auto left, auto right) {
               return nnf(!left) && nnf(!right);
             },
-            [](conjunction<pLTL>, auto left, auto right) {
+            [](logic::conjunction<pLTL>, auto left, auto right) {
               return nnf(!left) || nnf(!right);
             },
-            [](implication<pLTL>, auto left, auto right) {
+            [](logic::implication<pLTL>, auto left, auto right) {
               return nnf(left) && nnf(!right);
             },
-            [](iff<pLTL>, auto left, auto right) {
+            [](logic::iff<pLTL>, auto left, auto right) {
               return nnf(!implies(left,right)) || nnf(!implies(right,left));
             },
-            [](yesterday<pLTL>, auto op) {
+            [](logic::yesterday<pLTL>, auto op) {
               return Z(nnf(!op));
             },
-            [](w_yesterday<pLTL>, auto op) {
+            [](logic::w_yesterday<pLTL>, auto op) {
               return Y(nnf(!op));
             },
-            [](once<pLTL>, auto op) {
+            [](logic::once<pLTL>, auto op) {
               return H(nnf(!op));
             },
-            [](historically<pLTL>, auto op) {
+            [](logic::historically<pLTL>, auto op) {
               return O(nnf(!op));
             },
-            [](since<pLTL>, auto left, auto right) {
+            [](logic::since<pLTL>, auto left, auto right) {
               return T(nnf(!left), nnf(!right));
             },
-            [](triggered<pLTL>, auto left, auto right) {
+            [](logic::triggered<pLTL>, auto left, auto right) {
               return S(nnf(!left), nnf(!right));
             }
           );
@@ -130,15 +128,15 @@ namespace synth {
     void encoder::collect(spec sp) {
 
       std::unordered_set<proposition> _variables;
-      std::unordered_set<yesterday<pLTL>> _yreqs;
-      std::unordered_set<w_yesterday<pLTL>> _zreqs;
+      std::unordered_set<logic::yesterday<pLTL>> _yreqs;
+      std::unordered_set<logic::w_yesterday<pLTL>> _zreqs;
 
       sp.type.match(
-        [&](spec::type_t::eventually) {
+        [&](game_t::eventually) {
           _variables.insert(ground(Y(sp.formula)));
           _yreqs.insert(Y(sp.formula));
         },
-        [&](spec::type_t::always) {
+        [&](game_t::always) {
           _variables.insert(ground(Z(sp.formula)));
           _zreqs.insert(Z(sp.formula));    
         }
@@ -146,27 +144,27 @@ namespace synth {
 
       for_each_child_deep(sp.formula, [&](auto child) {
         child.match(
-          [&](yesterday<pLTL> y) {
+          [&](logic::yesterday<pLTL> y) {
             _variables.insert(ground(y));
             _yreqs.insert(y);
           },
-          [&](w_yesterday<pLTL> z) {
+          [&](logic::w_yesterday<pLTL> z) {
             _variables.insert(ground(z));
             _zreqs.insert(z);
           },
-          [&](since<pLTL> s) {
+          [&](logic::since<pLTL> s) {
             _variables.insert(ground(Y(s)));
             _yreqs.insert(Y(s));
           },
-          [&](triggered<pLTL> s) {
+          [&](logic::triggered<pLTL> s) {
             _variables.insert(ground(Z(s)));
             _zreqs.insert(Z(s));
           },
-          [&](once<pLTL> o) {
+          [&](logic::once<pLTL> o) {
             _variables.insert(ground(Y(o)));
             _yreqs.insert(Y(o));
           },
-          [&](historically<pLTL> h) {
+          [&](logic::historically<pLTL> h) {
             _variables.insert(ground(Z(h)));
             _zreqs.insert(Z(h));
           },
@@ -190,49 +188,49 @@ namespace synth {
       return *name;
     }
     
-    automata::formula encoder::snf(formula<pLTL> f) {
+    bformula encoder::snf(formula<pLTL> f) {
       return f.match(
-        [](boolean b) { return b; },
-        [](proposition p) { return p; },
-        [](negation<pLTL>, auto arg) { 
+        [](logic::boolean b) { return b; },
+        [](logic::proposition p) { return p; },
+        [](logic::negation<pLTL>, auto arg) { 
           return !snf(arg);
         },
-        [](disjunction<pLTL>, auto left, auto right) {
+        [](logic::disjunction<pLTL>, auto left, auto right) {
           return snf(left) || snf(right);
         },
-        [](conjunction<pLTL>, auto left, auto right) {
+        [](logic::conjunction<pLTL>, auto left, auto right) {
           return snf(left) && snf(right);
         },
-        [](yesterday<pLTL> y) {
+        [](logic::yesterday<pLTL> y) {
           return ground(y);
         },
-        [](w_yesterday<pLTL> z) {
+        [](logic::w_yesterday<pLTL> z) {
           return ground(z);
         },
-        [](once<pLTL>, auto arg) {
+        [](logic::once<pLTL>, auto arg) {
           return snf(arg) || ground(Y(O(arg)));
         },
-        [](historically<pLTL>, auto arg) {
+        [](logic::historically<pLTL>, auto arg) {
           return snf(arg) && ground(Z(H(arg)));
         },
-        [](since<pLTL>, auto left, auto right) {
+        [](logic::since<pLTL>, auto left, auto right) {
           return snf(right) || (snf(left) && ground(Y(S(left, right))));
         },
-        [](triggered<pLTL>, auto left, auto right) {
+        [](logic::triggered<pLTL>, auto left, auto right) {
           return snf(right) && (snf(left) || ground(Z(T(left, right))));
         },
-        [](implication<pLTL>) -> automata::formula { black_unreachable(); },
-        [](iff<pLTL>) -> automata::formula { black_unreachable(); }
+        [](logic::implication<pLTL>) -> bformula { black_unreachable(); },
+        [](logic::iff<pLTL>) -> bformula { black_unreachable(); }
       );
     }
 
     automata encoder::encode(spec sp) {
-      alphabet &sigma = *sp.formula.sigma();
+      logic::alphabet &sigma = *sp.formula.sigma();
       sp.formula = encoder::nnf(sp.formula);
 
       collect(sp);
 
-      automata::formula init = 
+      bformula init = 
         big_and(sigma, zreqs, [](auto req) {
           return ground(req);
         }) && 
@@ -240,18 +238,18 @@ namespace synth {
           return !ground(req);
         });
 
-      automata::formula trans = big_and(sigma, variables, [](proposition var) {
-        auto req = lift(var).to<unary<pLTL>>();
+      bformula trans = big_and(sigma, variables, [](proposition var) {
+        auto req = lift(var).to<logic::unary<pLTL>>();
         black_assert(req);
         
-        return iff(primed(var), snf(req->argument()));
+        return logic::iff(primed(var), snf(req->argument()));
       });
 
-      automata::formula objective = sp.type.match(
-        [&](spec::type_t::eventually) {
+      bformula objective = sp.type.match(
+        [&](game_t::eventually) {
           return ground(Y(sp.formula));
         },
-        [&](spec::type_t::always) {
+        [&](game_t::always) {
           return ground(Z(sp.formula));
         }
       );
