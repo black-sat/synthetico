@@ -49,13 +49,4 @@ namespace synth {
 
 }
 
-namespace std {
-  template<>
-  struct hash<::synth::primed_t> {
-    size_t operator()(::synth::primed_t p) {
-      return std::hash<::black::identifier>{}(p.label);
-    }
-  };
-}
-
 #endif // SYNTH_AUTOMATA_HPP

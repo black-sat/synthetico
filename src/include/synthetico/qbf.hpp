@@ -60,10 +60,10 @@ namespace synth {
     std::unordered_map<proposition, var_t> vars;
   };
 
+  qbformula flatten(qbformula f);
+  qbformula prenex(qbformula f);
   qdimacs clausify(qbformula f);
   std::string to_string(qdimacs qd);
-  
-  bool is_sat(qbformula f);
 
 }
 

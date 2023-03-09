@@ -81,6 +81,24 @@ namespace synth {
     return rename(f, [](auto p) { return primed(p); } );
   }
 
+  struct fresh_t {
+    proposition prop;
+    size_t n;
+
+    bool operator==(fresh_t const&) const = default;
+  };
+
+  inline std::string to_string(fresh_t f) {
+    return "{" + to_string(f.prop) + ", " + std::to_string(f.n) + "}";
+  }
+
+  struct fresh_gen_t {
+
+    proposition operator()(proposition p);
+
+    size_t next_fresh = 0;
+  };
+
   struct stepped_t {
     proposition prop;
     size_t step;
@@ -115,8 +133,6 @@ namespace synth {
   stepped(std::vector<proposition> props, size_t n);
 
 
-
-
 }
 
 
@@ -127,6 +143,23 @@ namespace std {
       return ::black_internal::hash_combine(
         std::hash<::black::proposition>{}(s.prop),
         std::hash<size_t>{}(s.step)
+      );
+    }
+  };
+
+  template<>
+  struct hash<::synth::primed_t> {
+    size_t operator()(::synth::primed_t p) {
+      return std::hash<::black::identifier>{}(p.label);
+    }
+  };
+
+  template<>
+  struct hash<::synth::fresh_t> {
+    size_t operator()(::synth::fresh_t s) {
+      return ::black_internal::hash_combine(
+        std::hash<::black::proposition>{}(s.prop),
+        std::hash<size_t>{}(s.n)
       );
     }
   };

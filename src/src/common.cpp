@@ -62,6 +62,14 @@ namespace synth {
     return result;
   }
 
+  proposition fresh_gen_t::operator()(proposition p) {
+    if(auto name = p.name().to<fresh_t>(); name.has_value()) {
+      return (*this)(name->prop);
+    }
+
+    return p.sigma()->proposition(fresh_t{p, next_fresh++});
+  }
+
 
   proposition stepped(proposition p, size_t n) {
     if(auto pp = p.name().to<primed_t>(); pp.has_value()) {

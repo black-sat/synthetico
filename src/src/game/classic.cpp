@@ -25,8 +25,11 @@
 #include <synthetico/synthetico.hpp>
 
 #include <functional>
+#include <unordered_set>
+#include <unordered_map>
 
 #include <iostream>
+
 
 namespace synth {
 
@@ -71,11 +74,16 @@ namespace synth {
 
 
   black::tribool is_realizable_classic(spec sp) {
+    using namespace logic::fragments::QBF;
+
     automata aut = encode(sp);
 
     qbformula qbf = encoder{*aut.init.sigma(), sp.type, aut}.fixpoint(2);
 
-    std::cout << to_string(qbf) << "\n";
+
+    std::cout << "f:         " << to_string(qbf) << "\n";
+    std::cout << "flattened: " << to_string(flatten(qbf)) << "\n";
+    std::cout << "prenex:    " << to_string(prenex(flatten(qbf))) << "\n";
 
     return black::tribool::undef;
   }
