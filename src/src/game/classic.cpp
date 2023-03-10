@@ -52,6 +52,14 @@ namespace synth {
       automata aut;
     };
 
+    static constexpr bool debug = false;
+
+    static qbformula print(std::string name, qbformula f) {
+      if(debug)
+        std::cerr << name << ": " << to_string(f) << "\n";
+      return f;
+    }
+
     qbformula encoder::fixpoint(std::optional<qbformula> previous) {
       using namespace logic::fragments::QBF;
       using op_t = logic::binary<Bool>::type;
@@ -64,7 +72,7 @@ namespace synth {
         [](game_t::always) { return op_t::conjunction{}; }
       );
 
-      return
+      return print("fixpoint",
         binary(op, 
           *previous, 
           thereis(aut.outputs,
@@ -74,22 +82,25 @@ namespace synth {
               )
             )
           )
-        );
+        )
+      );
     }
 
     qbformula encoder::test(qbformula fp, qbformula prevfp) {
       using namespace logic::fragments::QBF;
 
-      return foreach(aut.variables, implies(prevfp, fp));
+      return print("test", foreach(aut.variables, implies(fp, prevfp)));
     }
 
     qbformula encoder::test2(qbformula fp) {
       using namespace logic::fragments::QBF;
 
-      return foreach(aut.variables,
-        thereis(aut.outputs,
-          foreach(aut.inputs,
-            implies(fp && aut.trans, primed(fp))
+      return print("test2",
+        foreach(aut.variables,
+          thereis(aut.outputs,
+            foreach(aut.inputs,
+              implies(fp && aut.trans, primed(fp))
+            )
           )
         )
       );
@@ -98,7 +109,7 @@ namespace synth {
     qbformula encoder::win(qbformula fp) {
       using namespace logic::fragments::QBF;
 
-      return thereis(aut.variables, fp && aut.init);
+      return print("win", thereis(aut.variables, fp && aut.init));
     }
 
   }
@@ -110,12 +121,16 @@ namespace synth {
     alphabet &sigma = *sp.formula.sigma();
     automata aut = encode(sp);
 
+    if(debug)
+      std::cerr << aut << "\n";
+
     encoder enc{sigma, sp.type, aut};
 
     black::tribool result = black::tribool::undef;
 
     size_t k = 0;
-    std::cerr << " - k = 0\n";
+    if(debug)
+      std::cerr << " - k = 0\n";
 
     qbformula prevfp = enc.fixpoint();
     qbformula fp = enc.fixpoint(prevfp);
@@ -123,7 +138,8 @@ namespace synth {
       prevfp = fp;
       fp = enc.fixpoint(fp);
       k++;
-      std::cerr << " - k = " << k << "\n";
+      if(debug)
+        std::cerr << " - k = " << k << "\n";
     }
 
     if(result == black::tribool::undef)

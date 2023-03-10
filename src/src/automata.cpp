@@ -142,7 +142,7 @@ namespace synth {
         }
       );    
 
-      for_each_child_deep(sp.formula, [&](auto child) {
+      transform(sp.formula, [&](auto child) {
         child.match(
           [&](logic::yesterday<pLTL> y) {
             _variables.insert(ground(y));

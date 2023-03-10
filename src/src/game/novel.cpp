@@ -134,26 +134,35 @@ namespace synth {
     }
   }
 
+  static constexpr bool debug = false;
+
   black::tribool is_realizable_novel(spec sp) {
 
     logic::alphabet &sigma = *sp.formula.sigma();
 
     automata aut = encode(sp);
 
+    if(debug)
+      std::cerr << aut << "\n";
+
     size_t n = 3;
     while(true) {
-      // qbformula formulaC = 
-      //   encoder{sigma, aut}.encode(player_t::controller, sp.type, n);
-      // qdimacs qdC = clausify(formulaC);
+      qbformula formulaC = 
+        encoder{sigma, aut}.encode(player_t::controller, sp.type, n);
+      qdimacs qdC = clausify(formulaC);
       
       qbformula formulaE = 
         encoder{sigma, aut}.encode(player_t::environment, sp.type, n);
+
       qdimacs qdE = clausify(formulaE);
 
-      std::cerr << "- n = " << n << "\n";
+      if(debug) {
+        std::cerr << "- n = " << n << "\n";
+        std::cerr << "formula: " << to_string(formulaE) << "\n";
+      }
 
-      // if(is_sat(qdC) == true)
-      //   return true;
+      if(is_sat(qdC) == true)
+        return true;
       
       if(is_sat(qdE) == true)
         return false;

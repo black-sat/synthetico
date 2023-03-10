@@ -59,6 +59,8 @@ namespace synth {
 
   std::ostream &operator<<(std::ostream &ostr, spec s);
 
+  logic::formula<logic::LTLP> to_formula(spec sp);
+
   std::optional<spec> 
   parse(
     black::alphabet &sigma,

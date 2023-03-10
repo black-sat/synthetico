@@ -33,15 +33,19 @@
 namespace synth {
   
 
-  std::ostream &operator<<(std::ostream &ostr, spec s) {
-    std::string formula =  s.type.match(
-      [&](game_t::eventually) {
-        return "F(" + to_string(s.formula) + ")";
+  logic::formula<logic::LTLP> to_formula(spec sp) {
+    return sp.type.match(
+      [&](game_t::eventually) -> logic::formula<logic::LTLP> {
+        return F(sp.formula);
       },
-      [&](game_t::always) {
-        return "G(" + to_string(s.formula) + ")";
+      [&](game_t::always) -> logic::formula<logic::LTLP> {
+        return G(sp.formula);
       }
     );
+  }
+
+  std::ostream &operator<<(std::ostream &ostr, spec s) {
+    std::string formula = to_string(to_formula(s));
 
     ostr << "formula: " << formula << "\n";
     ostr << "inputs: \n";
@@ -84,7 +88,7 @@ namespace synth {
           iset.insert(sigma.proposition(std::string(argv[i])));
 
         std::unordered_set<proposition> oset;
-        for_each_child_deep(*arg, [&](auto child) {
+        transform(*arg, [&](auto child) {
           child.match(
             [&](proposition p) {
               if(iset.find(p) == iset.end())

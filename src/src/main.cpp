@@ -74,8 +74,8 @@ static int solve(synth::spec spec, algorithm algo) {
   black::tribool result = black::tribool::undef;
 
   try {
-    std::cerr << "Solving spec with the '" << to_string(algo) 
-              << "' algorithm...\n";
+    std::cerr << "Solving spec '" << to_string(to_formula(spec)) << "' "
+              << "with the '" << to_string(algo) << "' algorithm...\n";
     switch(algo){ 
       case algorithm::classic:
         result = is_realizable_classic(spec);
@@ -113,14 +113,7 @@ static std::optional<T> from_string(std::string s) {
 }
 
 static std::string to_cmdline(synth::spec spec) {
-   std::string cmdline =  spec.type.match(
-      [&](synth::game_t::eventually) {
-        return "'F(" + to_string(spec.formula) + ")'";
-      },
-      [&](synth::game_t::always) {
-        return "'G(" + to_string(spec.formula) + ")'";
-      }
-    );
+   std::string cmdline = "'" + to_string(to_formula(spec)) + "'";
 
   for(auto in : spec.inputs) 
     cmdline += " " + to_string(in);

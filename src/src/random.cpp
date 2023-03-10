@@ -78,6 +78,37 @@ namespace synth {
     );
   }
 
+  static logic::formula<pLTL> replace_consts(logic::formula<pLTL> f) {
+    using namespace logic;
+
+    return f.match(
+      [](boolean b) {
+        if(b.value())
+          return b.sigma()->proposition("c0");
+        return b.sigma()->proposition("u0");
+      },
+      [](proposition p) { return p; },
+      [](yesterday<pLTL> y, formula<pLTL> arg) {
+        if(arg.is<boolean>())
+          return y;
+        return Y(replace_consts(arg));
+      },
+      [](w_yesterday<pLTL> y, formula<pLTL> arg) {
+        if(arg.is<boolean>())
+          return y;
+        return Z(replace_consts(arg));
+      },
+      [](unary<pLTL> u, auto arg) {
+        return unary<pLTL>(u.node_type(), replace_consts(arg));
+      },
+      [](binary<pLTL> b, auto left, auto right) {
+        return binary<pLTL>(
+          b.node_type(), replace_consts(left), replace_consts(right)
+        );
+      }
+    );
+  }
+
   spec random_spec(
     logic::alphabet &sigma, 
     std::mt19937 &gen, size_t nsymbols, size_t size
@@ -112,9 +143,9 @@ namespace synth {
     }
 
     formula<pLTL> f = 
-      mirror(black_internal::random::random_ltl_formula(
+      replace_consts(mirror(black_internal::random::random_ltl_formula(
         gen, sigma, size, symbols
-      ));
+      )));
 
     return spec{type, f, inputs, outputs};
   }
