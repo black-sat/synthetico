@@ -29,6 +29,7 @@ set (
   src/automata.cpp
   src/qbf.cpp
   src/backend.cpp
+  src/random.cpp
   src/game/novel.cpp
   src/game/classic.cpp
 )

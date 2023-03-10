@@ -22,16 +22,18 @@
 // SOFTWARE.
 //
 
-#ifndef SYNTH_SYNTH_HPP
-#define SYNTH_SYNTH_HPP
+#ifndef SYNTH_RANDOM_HPP
+#define SYNTH_RANDOM_HPP
 
-#include <synthetico/common.hpp>
-#include <synthetico/spec.hpp>
-#include <synthetico/automata.hpp>
-#include <synthetico/qbf.hpp>
-#include <synthetico/backend.hpp>
-#include <synthetico/random.hpp>
-#include <synthetico/game/novel.hpp>
-#include <synthetico/game/classic.hpp>
+#include <random>
 
-#endif // SYNTH_SYNTH_HPP
+namespace synth {
+  
+  spec random_spec(
+    logic::alphabet &sigma, 
+    std::mt19937 &gen, size_t nsymbols, size_t size
+  );
+
+}
+
+#endif // SYNTH_RANDOM_HPP
