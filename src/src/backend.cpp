@@ -48,7 +48,7 @@ namespace synth {
     fstr << to_string(qd) << "\n";
   }
 
-  black::tribool solve(qdimacs const& qd) {
+  black::tribool is_sat(qdimacs const& qd) {
 
     using namespace std::literals;
 
@@ -108,6 +108,10 @@ namespace synth {
     }
 
     return black::tribool::undef;
+  }
+
+  black::tribool is_sat(qbformula f) {
+    return is_sat(clausify(prenex(flatten(f))));
   }
 
 }

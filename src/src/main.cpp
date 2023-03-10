@@ -27,25 +27,53 @@
 #include <synthetico/synthetico.hpp>
 
 #include <iostream>
+#include <string>
+
+enum class algorithm {
+  classic,
+  novel
+};
 
 int main(int argc, char **argv) {
 
-  black::alphabet sigma;
+  using namespace std::literals;
 
-  synth::spec spec = *synth::parse(sigma, argc, argv, [&](auto err) {
+  auto error = [&](std::string err) {
     std::cerr << argv[0] << ": error: " + err + "\n";
     std::cerr << argv[0] << ": usage: " << argv[0];
-    std::cerr << " <formula> <input 1> <input 2> ... <input n>\n";
+    std::cerr << " <classic|novel> <formula> [input 1] [input 2] ..."
+                 " [input n]\n";
     exit(1);
-  });
+  };
 
-  // std::cout << "Symbolic automata for: " << argv[1] << "\n\n";
-  // std::cout << encode(spec);
+  if(argc < 3)
+    error("insufficient command-line arguments");
+
+  algorithm algo;
+
+  if(argv[1] == "classic"s)
+    algo = algorithm::classic;
+  else if(argv[1] == "novel"s)
+    algo = algorithm::novel;
+  else
+    error("unknown algorithm");
+
+  black::alphabet sigma;
+
+  synth::spec spec = *synth::parse(sigma, argc - 1, argv + 1, error);
 
   black::tribool result = black::tribool::undef;
 
   try {
-    result = is_realizable_classic(spec);
+    std::cerr << "Solving spec with '" << argv[1] << "' algorithm...\n";
+    switch(algo){ 
+      case algorithm::classic:
+        result = is_realizable_classic(spec);
+        break;
+      case algorithm::novel:
+        result = is_realizable_novel(spec);
+        break;
+    }
   } catch(std::exception const& ex) {
     std::cerr << argv[0] << ": uncaught exception: " << ex.what() << "\n";
   }

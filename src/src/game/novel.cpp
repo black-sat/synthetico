@@ -140,27 +140,22 @@ namespace synth {
 
     automata aut = encode(sp);
 
-    std::cout << aut << "\n";
-
     size_t n = 3;
     while(true) {
-      qbformula formulaC = 
-        encoder{sigma, aut}.encode(player_t::controller, sp.type, n);
-      qdimacs qdC = clausify(formulaC);
+      // qbformula formulaC = 
+      //   encoder{sigma, aut}.encode(player_t::controller, sp.type, n);
+      // qdimacs qdC = clausify(formulaC);
       
       qbformula formulaE = 
         encoder{sigma, aut}.encode(player_t::environment, sp.type, n);
       qdimacs qdE = clausify(formulaE);
 
-      std::cout << "n = " << n << "\n";
-      std::cout << "encoding: " << to_string(formulaC) << "\n";
+      std::cerr << "- n = " << n << "\n";
 
-      //std::cout << "\n" << to_string(qd) << "\n";
-
-      if(solve(qdC) == true)
-        return true;
+      // if(is_sat(qdC) == true)
+      //   return true;
       
-      if(solve(qdE) == true)
+      if(is_sat(qdE) == true)
         return false;
       
       n++;

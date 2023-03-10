@@ -37,19 +37,26 @@ namespace synth {
 
     struct encoder {
 
-      qbformula fixpoint(size_t n);
+      qbformula fixpoint(std::optional<qbformula> previous = {});
+
+      [[maybe_unused]]
+      qbformula test(qbformula fp, qbformula prevfp);
+
+      [[maybe_unused]]
+      qbformula test2(qbformula fp);
+
+      qbformula win(qbformula fp);
 
       logic::alphabet &sigma;
       game_t type;
       automata aut;
     };
 
-    qbformula encoder::fixpoint(size_t n) {
+    qbformula encoder::fixpoint(std::optional<qbformula> previous) {
       using namespace logic::fragments::QBF;
-
       using op_t = logic::binary<Bool>::type;
 
-      if(n == 0)
+      if(!previous)
         return aut.objective;
 
       op_t op = type.match(
@@ -57,17 +64,41 @@ namespace synth {
         [](game_t::always) { return op_t::conjunction{}; }
       );
 
-      return 
+      return
         binary(op, 
-          fixpoint(n - 1), 
-          foreach(aut.outputs,
-            thereis(aut.inputs,
+          *previous, 
+          thereis(aut.outputs,
+            foreach(aut.inputs,
               foreach(primed(aut.variables),
-                implies(aut.trans, primed(fixpoint(n - 1)))
+                implies(aut.trans, primed(*previous))
               )
             )
           )
         );
+    }
+
+    qbformula encoder::test(qbformula fp, qbformula prevfp) {
+      using namespace logic::fragments::QBF;
+
+      return foreach(aut.variables, implies(prevfp, fp));
+    }
+
+    qbformula encoder::test2(qbformula fp) {
+      using namespace logic::fragments::QBF;
+
+      return foreach(aut.variables,
+        thereis(aut.outputs,
+          foreach(aut.inputs,
+            implies(fp && aut.trans, primed(fp))
+          )
+        )
+      );
+    }
+
+    qbformula encoder::win(qbformula fp) {
+      using namespace logic::fragments::QBF;
+
+      return thereis(aut.variables, fp && aut.init);
     }
 
   }
@@ -76,16 +107,29 @@ namespace synth {
   black::tribool is_realizable_classic(spec sp) {
     using namespace logic::fragments::QBF;
 
+    alphabet &sigma = *sp.formula.sigma();
     automata aut = encode(sp);
 
-    qbformula qbf = encoder{*aut.init.sigma(), sp.type, aut}.fixpoint(2);
+    encoder enc{sigma, sp.type, aut};
 
+    black::tribool result = black::tribool::undef;
 
-    std::cout << "f:         " << to_string(qbf) << "\n";
-    std::cout << "flattened: " << to_string(flatten(qbf)) << "\n";
-    std::cout << "prenex:    " << to_string(prenex(flatten(qbf))) << "\n";
+    size_t k = 0;
+    std::cerr << " - k = 0\n";
 
-    return black::tribool::undef;
+    qbformula prevfp = enc.fixpoint();
+    qbformula fp = enc.fixpoint(prevfp);
+    while((result = is_sat(enc.test(fp, prevfp))) == false) {
+      prevfp = fp;
+      fp = enc.fixpoint(fp);
+      k++;
+      std::cerr << " - k = " << k << "\n";
+    }
+
+    if(result == black::tribool::undef)
+      return result;
+
+    return is_sat(enc.win(fp));
   }
 
 }

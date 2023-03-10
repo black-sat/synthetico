@@ -63,7 +63,10 @@ namespace synth {
         auto nright = flatten(right);
         return binary(b.node_type(), nleft, nright);
       },
-      [&](qbf q, auto vars, auto matrix) {
+      [&](qbf q, auto vars, auto matrix) -> qbformula {
+        if(vars.empty())
+          return flatten(matrix);
+
         std::unordered_map<proposition, proposition> map;
         for(auto p : vars) {
           if(used.contains(p))
@@ -98,7 +101,7 @@ namespace synth {
       );
     };
 
-    auto result = f.match(
+    return f.match(
       [](boolean b) { return b; },
       [](proposition p) { return p; },
       [&](negation, auto arg) {
@@ -171,10 +174,6 @@ namespace synth {
         return qbf(q.node_type(), vars, prenex(matrix));
       }
     );
-
-    //std::cout << to_string(result) << "\n";
-
-    return result;
   }
 
 
@@ -220,8 +219,6 @@ namespace synth {
     prenex_qbf qbformula = extract_prenex(f);
 
     black::cnf cnf = black::to_cnf(qbformula.matrix);
-
-    //std::cout << to_string(cnf) << "\n";
 
     std::unordered_map<var_t, proposition> props;
     std::unordered_map<proposition, var_t> vars;
