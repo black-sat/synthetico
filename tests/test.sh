@@ -7,10 +7,15 @@ die() {
 }
 
 if [ -z "$1" ]; then
+  die "Please provide a timeout"
+fi
+
+if [ -z "$2" ]; then
   die "Please provide a tests file"
 fi
 
-tests="$(pwd)/$1"
+timeout=$1
+tests="$(pwd)/$2"
 
 cd "$(git rev-parse --show-toplevel)/build"
 
@@ -21,7 +26,7 @@ while IFS= read -r in; do
   for algo in novel classic; do 
     time=$( \
       (\time -f %e \
-        timeout 10 \
+        timeout $timeout \
         bash -c "./synth $algo $in > ./out-$i.txt 2> /dev/null" \
       ) 2>&1 \
     )
@@ -34,4 +39,4 @@ while IFS= read -r in; do
   done
   echo
   i=$((i + 1))
-done < "$1"
+done < $tests
