@@ -37,6 +37,7 @@ namespace synth {
 
     struct encoder {
 
+      [[maybe_unused]]
       qbformula fixpoint(std::optional<qbformula> previous = {});
 
       [[maybe_unused]]
@@ -45,6 +46,7 @@ namespace synth {
       [[maybe_unused]]
       qbformula test2(qbformula fp);
 
+      [[maybe_unused]]
       qbformula win(qbformula fp);
 
       logic::alphabet &sigma;
@@ -52,7 +54,7 @@ namespace synth {
       automata aut;
     };
 
-    static constexpr bool debug = false;
+    static constexpr bool debug = true;
 
     static qbformula print(std::string name, qbformula f) {
       if(debug)
@@ -77,7 +79,7 @@ namespace synth {
           *previous, 
           thereis(aut.outputs,
             foreach(aut.inputs,
-              foreach(primed(aut.variables),
+              thereis(primed(aut.variables),
                 implies(aut.trans, primed(*previous))
               )
             )
@@ -89,7 +91,14 @@ namespace synth {
     qbformula encoder::test(qbformula fp, qbformula prevfp) {
       using namespace logic::fragments::QBF;
 
-      return print("test", foreach(aut.variables, implies(fp, prevfp)));
+      return type.match(
+        [&](game_t::eventually) -> qbformula { 
+          return print("test", foreach(aut.variables, implies(fp, prevfp)));
+        },
+        [&](game_t::always) -> qbformula { 
+          return print("test", foreach(aut.variables, implies(prevfp, fp)));
+        }
+      );
     }
 
     qbformula encoder::test2(qbformula fp) {
@@ -118,7 +127,19 @@ namespace synth {
   black::tribool is_realizable_classic(spec sp) {
     using namespace logic::fragments::QBF;
 
-    alphabet &sigma = *sp.formula.sigma();
+    // alphabet &sigma = *sp.formula.sigma();
+
+    // auto x = sigma.proposition("x");
+    // // auto u0 = sigma.proposition("u0");
+    // // auto u1 = sigma.proposition("u1");
+    // auto u2 = sigma.proposition("u2");
+    // auto u3 = sigma.proposition("u3");
+
+    // std::cerr << "f is: " << (is_sat(f) ? "SAT" : "UNSAT") << "\n";
+
+
+    // return true;
+
     automata aut = encode(sp);
 
     if(debug)
@@ -130,16 +151,16 @@ namespace synth {
 
     size_t k = 0;
     if(debug)
-      std::cerr << " - k = 0\n";
+      std::cerr << "- k = 0\n";
 
     qbformula prevfp = enc.fixpoint();
     qbformula fp = enc.fixpoint(prevfp);
-    while((result = is_sat(enc.test(fp, prevfp))) == false) {
-      prevfp = fp;
-      fp = enc.fixpoint(fp);
+    while((result = is_sat(enc.test(fp, prevfp))) == true) {
       k++;
       if(debug)
-        std::cerr << " - k = " << k << "\n";
+        std::cerr << "- k = " << k << "\n";
+      prevfp = fp;
+      fp = enc.fixpoint(fp);
     }
 
     if(result == black::tribool::undef)

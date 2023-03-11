@@ -111,7 +111,18 @@ namespace synth {
   }
 
   black::tribool is_sat(qbformula f) {
-    return is_sat(clausify(prenex(flatten(f))));
+    std::cerr << "formula: " << to_string(f) << "\n";
+    
+    auto fl = flatten(f);
+    std::cerr << "flatten: " << to_string(fl) << "\n";
+    
+    auto pr = prenex(fl);
+    std::cerr << "prenex:  " << to_string(pr) << "\n";
+    
+    auto cl = clausify(pr);
+    //std::cerr << "QDIMACS: \n"  << to_string(cl) << "\n";
+
+    return is_sat(cl);
   }
 
 }

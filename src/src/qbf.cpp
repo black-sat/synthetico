@@ -106,11 +106,25 @@ namespace synth {
       [](proposition p) { return p; },
       [&](negation, auto arg) {
         return arg.match(
+          [](boolean b) { return !b; },
+          [](proposition p) { return !p; },
+          [](negation, auto arg) {
+            return prenex(arg);
+          },
+          [](conjunction, auto left, auto right) {
+            return prenex(!left || !right);
+          },
+          [](disjunction, auto left, auto right) {
+            return prenex(!left && !right);
+          },
+          [](implication, auto left, auto right) {
+            return prenex(left && !right);
+          },
+          [](iff, auto left, auto right) {
+            return prenex(!(implies(left, right) && implies(right, left)));
+          },
           [&](qbf q, auto vars, auto matrix) {
             return qbf(dual(q.node_type()), vars, prenex(!matrix));
-          },
-          [&](otherwise) {
-            return !prenex(arg);
           }
         );
       },
@@ -252,6 +266,9 @@ namespace synth {
       
       std::vector<var_t> block_vars;
       for(auto p : block.variables()) {
+        if(!vars.contains(p)) 
+          continue;
+
         declared_vars.insert(vars[p]);
         block_vars.push_back(vars[p]);
       }
@@ -267,6 +284,8 @@ namespace synth {
     std::unordered_set<var_t> last;
     for(auto cl : cnf.clauses) {
       for(auto [sign, prop] : cl.literals) {
+        if(!vars.contains(prop))
+          continue;
         var_t var = vars[prop];
         if(!declared_vars.contains(var)) {
           last.insert(var);
