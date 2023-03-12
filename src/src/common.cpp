@@ -41,13 +41,11 @@ namespace synth {
         );
       },
       [&](qbf q, auto vars, auto matrix) {
-        auto new_renaming = [&](proposition p) {
-          if(std::find(vars.begin(), vars.end(), p) == vars.end())
-            return renaming(p);
-          return p;
-        };
+        std::vector<proposition> new_vars;
+        for(auto p : vars)
+          new_vars.push_back(renaming(p));
 
-        return qbf(q.node_type(), vars, rename(matrix, new_renaming));
+        return qbf(q.node_type(), new_vars, rename(matrix, renaming));
       }
     );
   }
@@ -85,33 +83,6 @@ namespace synth {
     }
     
     return stepped(p, 0);
-  }
-
-  formula<Bool> 
-  stepped(formula<Bool> f, size_t n) {
-    using namespace logic::fragments::propositional;
-
-    return f.match(
-      [](boolean b) { return b; },
-      [&](proposition p) {
-        return stepped(p, n); 
-      },
-      [&](negation, auto arg) {
-        return !stepped(arg, n);
-      },
-      [&](conjunction, auto left, auto right) { 
-        return stepped(left, n) && stepped(right, n);
-      },
-      [&](disjunction, auto left, auto right) {
-        return stepped(left, n) || stepped(right, n);
-      },
-      [&](implication, auto left, auto right) {
-        return implies(stepped(left, n), stepped(right, n));
-      },
-      [&](iff, auto left, auto right) {
-        return iff(stepped(left, n), stepped(right, n));
-      }
-    );
   }
 
 }

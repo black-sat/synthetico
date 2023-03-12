@@ -109,10 +109,10 @@ namespace synth {
   inline std::string to_string(stepped_t s) {
     return to_string(s.prop) + ", " + std::to_string(s.step);
   }
-
+  
   proposition stepped(proposition p, size_t n);
   proposition stepped(proposition p);
-  
+
   inline std::vector<proposition> 
   stepped(std::vector<proposition> props, size_t n) {
     return rename(props, [&](auto p) { return stepped(p, n); } );
@@ -121,13 +121,14 @@ namespace synth {
   inline std::vector<proposition> stepped(std::vector<proposition> props) {
     return rename(props, [](auto p) { return stepped(p); } );
   }
-
+  
   inline qbformula stepped(qbformula f) {
     return rename(f, [](auto p) { return stepped(p); } );
   }
   
-  formula<Bool> 
-  stepped(formula<Bool> f, size_t n);
+  inline bformula stepped(bformula f, size_t n) {
+    return *rename(f, [&](auto p) { return stepped(p, n); }).to<bformula>();
+  }
   
   std::vector<proposition> 
   stepped(std::vector<proposition> props, size_t n);

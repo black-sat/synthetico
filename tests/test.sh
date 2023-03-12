@@ -15,7 +15,7 @@ if [ -z "$2" ]; then
 fi
 
 timeout=$1
-tests="$(pwd)/$2"
+tests="$(realpath $2)"
 
 cd "$(git rev-parse --show-toplevel)/build"
 

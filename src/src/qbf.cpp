@@ -101,6 +101,9 @@ namespace synth {
       );
     };
 
+    if(f.is<bformula>())
+      return f;
+
     return f.match(
       [](boolean b) { return b; },
       [](proposition p) { return p; },
