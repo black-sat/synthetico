@@ -13,11 +13,12 @@ The tool currently works only on Linux systems.
    $ which pedant
    ```
    should show its location.
-2. Install [BLACK](https://www.black-sat.org) following the instructions on the website, **but**:
-   a. BLACK needs to be compiled **from source** and from the `development` branch, 
-      so after cloning the repository from GitHub, make sure to run the following:
+2. Install [BLACK](https://www.black-sat.org) following the instructions on the website, **but pay attention**:
+   BLACK needs to be compiled **from source** and from the `features/synthetico` branch, 
+   so after cloning the repository from GitHub, make sure to run the following from BLACK's
+   source directory:
       ```
-      $ git checkout development
+      $ git checkout features/synthetico
       ```
 3. Compile `synthetico`:
    ```
