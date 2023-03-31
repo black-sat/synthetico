@@ -43,7 +43,28 @@ namespace synth {
     bformula objective;
   };
 
-  std::ostream &operator<<(std::ostream &, automata);
+  inline std::ostream &operator<<(std::ostream &str, automata aut) {
+    str << "inputs:\n";
+    for(auto in : aut.inputs) {
+      str << "- " << to_string(in) << "\n";
+    }
+    
+    str << "\noutputs:\n";
+    for(auto out : aut.outputs) {
+      str << "- " << to_string(out) << "\n";
+    }
+
+    str << "\ninit:\n";
+    str << "- " << to_string(aut.init) << "\n";
+    
+    str << "\ntrans:\n";
+    str << "- " << to_string(aut.trans) << "\n";
+    
+    str << "\nobjective:\n";
+    str << "- " << to_string(aut.objective) << "\n";
+
+    return str;
+  }
 
 }
 

@@ -134,7 +134,7 @@ namespace synth {
     }
   }
 
-  static constexpr bool debug = false;
+  static constexpr bool debug = true;
 
   static black::tribool solve(automata aut, game_t type) {
     logic::alphabet &sigma = *aut.init.sigma();
@@ -172,7 +172,7 @@ namespace synth {
   {
     if(auto ppspec = to_purepast(sp); ppspec) 
       return is_realizable_novel(*ppspec);
-      
+
     automata aut = encode(sp);
 
     return solve(aut, game_t::eventually{});
