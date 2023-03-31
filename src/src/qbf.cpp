@@ -111,8 +111,8 @@ namespace synth {
         return arg.match(
           [](boolean b) { return !b; },
           [](proposition p) { return !p; },
-          [](negation, auto arg) {
-            return prenex(arg);
+          [](negation, auto narg) {
+            return prenex(narg);
           },
           [](conjunction, auto left, auto right) {
             return prenex(!left || !right);

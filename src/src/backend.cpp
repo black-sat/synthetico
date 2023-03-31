@@ -53,7 +53,7 @@ namespace synth {
     using namespace std::literals;
 
     std::mt19937 gen(std::random_device{}());
-    std::uniform_int_distribution dist(1, 99999);
+    std::uniform_int_distribution<size_t> dist(1, 99999);
 
     std::string input_filename = 
       "synth-" + std::to_string(dist(gen)) + ".dqdimacs";
