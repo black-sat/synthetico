@@ -22,7 +22,8 @@
 // SOFTWARE.
 //
 
-#include <synthetico/encoding/full.hpp>
+#include <synthetico/encoding/full/full.hpp>
+#include <synthetico/encoding/full/det.hpp>
 
 #include <black/logic/prettyprint.hpp>
 
@@ -346,7 +347,7 @@ namespace synth {
   }
 
   automata encode(spec sp) {
-    return encoder{}.encode(sp);
+    return determinize(encoder{}.encode(sp));
   }
 
 }

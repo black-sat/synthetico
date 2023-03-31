@@ -22,19 +22,14 @@
 // SOFTWARE.
 //
 
-#ifndef SYNTH_SYNTH_HPP
-#define SYNTH_SYNTH_HPP
+#ifndef SYNTH_ENCODING_FULL_FULL_HPP
+#define SYNTH_ENCODING_FULL_FULL_HPP
 
-#include <synthetico/common.hpp>
 #include <synthetico/spec.hpp>
 #include <synthetico/automata.hpp>
-#include <synthetico/qbf.hpp>
-#include <synthetico/backend.hpp>
-#include <synthetico/random.hpp>
-#include <synthetico/encoding/purepast.hpp>
-#include <synthetico/encoding/full/full.hpp>
-#include <synthetico/encoding/full/det.hpp>
-#include <synthetico/game/novel.hpp>
-#include <synthetico/game/classic.hpp>
 
-#endif // SYNTH_SYNTH_HPP
+namespace synth {
+  automata encode(spec sp);
+}
+
+#endif // SYNTH_ENCODING_FULL_HPP

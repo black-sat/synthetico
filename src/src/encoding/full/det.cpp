@@ -22,14 +22,12 @@
 // SOFTWARE.
 //
 
-#ifndef SYNTH_ENCODING_FULL_HPP
-#define SYNTH_ENCODING_FULL_HPP
-
-#include <synthetico/spec.hpp>
-#include <synthetico/automata.hpp>
+#include <synthetico/encoding/full/det.hpp>
 
 namespace synth {
-  automata encode(spec sp);
-}
+  
+  automata determinize(automata aut) {
+    return aut;
+  }
 
-#endif // SYNTH_ENCODING_FULL_HPP
+}

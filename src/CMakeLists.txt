@@ -30,7 +30,8 @@ set (
   src/backend.cpp
   src/random.cpp
   src/encoding/purepast.cpp
-  src/encoding/full.cpp
+  src/encoding/full/full.cpp
+  src/encoding/full/det.cpp
   src/game/novel.cpp
   src/game/classic.cpp
 )
