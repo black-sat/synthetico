@@ -144,7 +144,7 @@ namespace synth {
 
     formula<pLTL> f = 
       replace_consts(mirror(black_internal::random::random_ltl_formula(
-        gen, sigma, size, symbols
+        gen, sigma, (int)size, symbols
       )));
 
     return purepast_spec{type, f, inputs, outputs};
