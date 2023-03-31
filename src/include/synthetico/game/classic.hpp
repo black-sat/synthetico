@@ -29,6 +29,7 @@
 
 namespace synth {
 
+  black::tribool is_realizable_classic(purepast_spec sp);  
   black::tribool is_realizable_classic(spec sp);  
 
 }

@@ -22,7 +22,7 @@
 // SOFTWARE.
 //
 
-#include <synthetico/automata.hpp>
+#include <synthetico/encoding/purepast.hpp>
 
 #include <black/logic/prettyprint.hpp>
 
@@ -35,7 +35,7 @@ namespace synth {
 
       static formula<pLTL> nnf(formula<pLTL> f);
 
-      void collect(spec sp);
+      void collect(purepast_spec sp);
 
       static proposition ground(formula<pLTL> y);
 
@@ -43,7 +43,7 @@ namespace synth {
 
       static bformula snf(formula<pLTL> f);
 
-      automata encode(spec sp);
+      automata encode(purepast_spec sp);
 
       std::vector<logic::yesterday<pLTL>> yreqs;
       std::vector<logic::w_yesterday<pLTL>> zreqs;
@@ -125,7 +125,7 @@ namespace synth {
       );
     }
 
-    void encoder::collect(spec sp) {
+    void encoder::collect(purepast_spec sp) {
 
       std::unordered_set<proposition> _variables;
       std::unordered_set<logic::yesterday<pLTL>> _yreqs;
@@ -224,7 +224,7 @@ namespace synth {
       );
     }
 
-    automata encoder::encode(spec sp) {
+    automata encoder::encode(purepast_spec sp) {
       logic::alphabet &sigma = *sp.formula.sigma();
       sp.formula = encoder::nnf(sp.formula);
 
@@ -258,7 +258,7 @@ namespace synth {
     }
   }
 
-  automata encode(spec sp) {
+  automata encode(purepast_spec sp) {
     return encoder{}.encode(sp);
   }
 

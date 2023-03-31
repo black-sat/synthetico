@@ -26,10 +26,11 @@ set (
   src/main.cpp 
   src/common.cpp
   src/spec.cpp
-  src/automata.cpp
   src/qbf.cpp
   src/backend.cpp
   src/random.cpp
+  src/encoding/purepast.cpp
+  src/encoding/full.cpp
   src/game/novel.cpp
   src/game/classic.cpp
 )

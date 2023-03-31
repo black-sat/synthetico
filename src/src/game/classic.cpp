@@ -109,18 +109,15 @@ namespace synth {
 
   }
 
-
-  black::tribool is_realizable_classic(spec sp) {
+  static black::tribool solve(automata aut, game_t type) { 
     using namespace logic::fragments::QBF;
 
-    alphabet &sigma = *sp.formula.sigma();
-
-    automata aut = encode(sp);
+    alphabet &sigma = *aut.init.sigma();
 
     if(debug)
       std::cerr << aut << "\n";
 
-    encoder enc{sigma, sp.type, aut};
+    encoder enc{sigma, type, aut};
 
     black::tribool result = black::tribool::undef;
 
@@ -142,6 +139,24 @@ namespace synth {
       return result;
 
     return is_sat(enc.win(fp));
+  }
+
+
+  black::tribool is_realizable_classic(purepast_spec sp) 
+  {
+    automata aut = encode(sp);
+
+    return solve(aut, sp.type);
+  }
+
+  black::tribool is_realizable_classic(spec sp) 
+  {
+    if(auto ppspec = to_purepast(sp); ppspec) 
+      return is_realizable_classic(*ppspec);
+    
+    automata aut = encode(sp);
+
+    return solve(aut, game_t::eventually{});
   }
 
 }

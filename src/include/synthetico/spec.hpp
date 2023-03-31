@@ -32,6 +32,8 @@
 
 #include <black/logic/logic.hpp>
 
+#include <synthetico/common.hpp>
+
 namespace synth {
   
   namespace logic = black::logic;
@@ -51,22 +53,32 @@ namespace synth {
   >;
 
   struct spec {    
+    tformula formula;
+    std::vector<proposition> inputs;
+    std::vector<proposition> outputs;
+  };
+  
+  struct purepast_spec {
     game_t type;
     logic::formula<pLTL> formula;
     std::vector<proposition> inputs;
     std::vector<proposition> outputs;
   };
 
+  tformula to_formula(purepast_spec sp);
+  spec to_spec(purepast_spec sp);
+  std::optional<purepast_spec> to_purepast(spec sp);
+  
   std::ostream &operator<<(std::ostream &ostr, spec s);
+  std::ostream &operator<<(std::ostream &ostr, purepast_spec s);
 
-  logic::formula<logic::LTLP> to_formula(spec sp);
-
-  std::optional<spec> 
+  std::optional<spec>
   parse(
     black::alphabet &sigma,
     int argc, char **argv,
     std::function<void(std::string)> error
   );
+
 
 }
 

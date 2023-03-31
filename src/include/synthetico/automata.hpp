@@ -27,7 +27,7 @@
 
 #include <black/logic/logic.hpp>
 
-#include <synthetico/synthetico.hpp>
+#include <synthetico/common.hpp>
 
 namespace synth {
   
@@ -44,8 +44,6 @@ namespace synth {
   };
 
   std::ostream &operator<<(std::ostream &, automata);
-
-  automata encode(spec sp);
 
 }
 

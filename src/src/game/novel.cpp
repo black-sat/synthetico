@@ -136,11 +136,8 @@ namespace synth {
 
   static constexpr bool debug = false;
 
-  black::tribool is_realizable_novel(spec sp) {
-
-    logic::alphabet &sigma = *sp.formula.sigma();
-
-    automata aut = encode(sp);
+  static black::tribool solve(automata aut, game_t type) {
+    logic::alphabet &sigma = *aut.init.sigma();
 
     if(debug)
       std::cerr << aut << "\n";
@@ -148,11 +145,11 @@ namespace synth {
     size_t n = 3;
     while(true) {
       qbformula formulaC = 
-        encoder{sigma, aut}.encode(player_t::controller, sp.type, n);
+        encoder{sigma, aut}.encode(player_t::controller, type, n);
       qdimacs qdC = clausify(formulaC);
       
       qbformula formulaE = 
-        encoder{sigma, aut}.encode(player_t::environment, sp.type, n);
+        encoder{sigma, aut}.encode(player_t::environment, type, n);
 
       qdimacs qdE = clausify(formulaE);
 
@@ -168,7 +165,24 @@ namespace synth {
         return false;
       
       n++;
-    }    
+    }
+  }
+
+  black::tribool is_realizable_novel(spec sp) 
+  {
+    if(auto ppspec = to_purepast(sp); ppspec) 
+      return is_realizable_novel(*ppspec);
+      
+    automata aut = encode(sp);
+
+    return solve(aut, game_t::eventually{});
+  }
+
+  black::tribool is_realizable_novel(purepast_spec sp) 
+  {
+    automata aut = encode(sp);
+
+    return solve(aut, sp.type);
   }
 
 }

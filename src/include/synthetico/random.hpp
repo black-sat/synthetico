@@ -29,7 +29,7 @@
 
 namespace synth {
   
-  spec random_spec(
+  purepast_spec random_spec(
     logic::alphabet &sigma, 
     std::mt19937 &gen, size_t nsymbols, size_t size
   );

@@ -109,7 +109,7 @@ namespace synth {
     );
   }
 
-  spec random_spec(
+  purepast_spec random_spec(
     logic::alphabet &sigma, 
     std::mt19937 &gen, size_t nsymbols, size_t size
   ) {
@@ -147,7 +147,7 @@ namespace synth {
         gen, sigma, size, symbols
       )));
 
-    return spec{type, f, inputs, outputs};
+    return purepast_spec{type, f, inputs, outputs};
   }
 
 }

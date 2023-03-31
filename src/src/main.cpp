@@ -74,7 +74,7 @@ static int solve(synth::spec spec, algorithm algo) {
   black::tribool result = black::tribool::undef;
 
   try {
-    std::cerr << "Solving spec '" << to_string(to_formula(spec)) << "' "
+    std::cerr << "Solving spec '" << to_string(spec.formula) << "' "
               << "with the '" << to_string(algo) << "' algorithm...\n";
     switch(algo){ 
       case algorithm::classic:
@@ -112,7 +112,7 @@ static std::optional<T> from_string(std::string s) {
   return v;
 }
 
-static std::string to_cmdline(synth::spec spec) {
+static std::string to_cmdline(synth::purepast_spec spec) {
    std::string cmdline = "'" + to_string(to_formula(spec)) + "'";
 
   for(auto in : spec.inputs) 
@@ -145,7 +145,7 @@ static int random(int argc, char **argv){
   black::alphabet sigma;
 
   for(size_t i = 0; i < *nformulas; i++) {
-    synth::spec spec = synth::random_spec(sigma, gen, *nvars, *size);
+    synth::purepast_spec spec = synth::random_spec(sigma, gen, *nvars, *size);
     std::cout << to_cmdline(spec) << "\n";
   }
 

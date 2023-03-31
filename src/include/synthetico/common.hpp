@@ -40,12 +40,14 @@ namespace synth {
 
   using Bool = logic::propositional;
   using QBF = logic::QBF;
+  using LTLP = logic::LTLP;
 
   template<typename T>
   using formula = logic::formula<T>;
 
   using bformula = formula<Bool>;
   using qbformula = formula<QBF>;
+  using tformula = formula<LTLP>;
 
   using proposition = logic::proposition;
   using otherwise = logic::otherwise;

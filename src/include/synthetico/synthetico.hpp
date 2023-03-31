@@ -31,6 +31,8 @@
 #include <synthetico/qbf.hpp>
 #include <synthetico/backend.hpp>
 #include <synthetico/random.hpp>
+#include <synthetico/encoding/purepast.hpp>
+#include <synthetico/encoding/full.hpp>
 #include <synthetico/game/novel.hpp>
 #include <synthetico/game/classic.hpp>
 

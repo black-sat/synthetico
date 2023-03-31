@@ -22,16 +22,10 @@
 // SOFTWARE.
 //
 
-#ifndef SYNTH_GAME_NOVEL_HPP
-#define SYNTH_GAME_NOVEL_HPP
-
-#include <synthetico/synthetico.hpp>
+#include <synthetico/encoding/full.hpp>
 
 namespace synth {
-
-  black::tribool is_realizable_novel(purepast_spec sp);
-  black::tribool is_realizable_novel(spec sp);
-
+  automata encode(spec) {
+    black_unreachable();
+  }
 }
-
-#endif // SYNTH_GAME_NOVEL_HPP

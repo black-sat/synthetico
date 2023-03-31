@@ -33,19 +33,27 @@
 namespace synth {
   
 
-  logic::formula<logic::LTLP> to_formula(spec sp) {
+  tformula to_formula(purepast_spec sp) {
     return sp.type.match(
-      [&](game_t::eventually) -> logic::formula<logic::LTLP> {
+      [&](game_t::eventually) -> tformula {
         return F(sp.formula);
       },
-      [&](game_t::always) -> logic::formula<logic::LTLP> {
+      [&](game_t::always) -> tformula {
         return G(sp.formula);
       }
     );
   }
 
+  spec to_spec(purepast_spec sp) {
+    return spec {
+      .formula = to_formula(sp),
+      .inputs = sp.inputs,
+      .outputs = sp.outputs
+    };
+  }
+
   std::ostream &operator<<(std::ostream &ostr, spec s) {
-    std::string formula = to_string(to_formula(s));
+    std::string formula = to_string(s.formula);
 
     ostr << "formula: " << formula << "\n";
     ostr << "inputs: \n";
@@ -56,6 +64,10 @@ namespace synth {
       ostr << "- " << to_string(o) << "\n";
 
     return ostr;
+  }
+
+  std::ostream &operator<<(std::ostream &ostr, purepast_spec s) {
+    return ostr << to_spec(s);
   }
 
   std::optional<spec> 
@@ -69,45 +81,54 @@ namespace synth {
       return std::nullopt;
     }
 
-    auto f = black::parse_formula(sigma, argv[1], error);
+    auto parsed = black::parse_formula(sigma, argv[1], error);
 
-    if(!f)
+    if(!parsed)
       return std::nullopt;
 
-    return f->match(
-      [&](black::only<FG> fg) -> std::optional<spec> {
-        game_t t = fg.node_type();
-        auto arg = fg.to<black::unary>()->argument().to<formula<pLTL>>();
-        if(!arg) {
-          error("only F(pLTL) or G(pLTL) formulas are supported");
+    auto f = parsed->to<tformula>();
+    if(!f) {
+      error("Only LTL+P formulas are supported");
+      return std::nullopt;
+    }
+
+    std::unordered_set<proposition> iset;
+    for(int i = 2; i < argc; i++)
+      iset.insert(sigma.proposition(std::string(argv[i])));
+
+    std::unordered_set<proposition> oset;
+    transform(*f, [&](auto child) {
+      child.match(
+        [&](proposition p) {
+          if(iset.find(p) == iset.end())
+            oset.insert(p);
+        },
+        [](otherwise) { }
+      );
+    });
+
+    std::vector<proposition> inputs(iset.begin(), iset.end());
+    std::vector<proposition> outputs(oset.begin(), oset.end());
+
+    return spec{ 
+      .formula = *f, 
+      .inputs = inputs, .outputs = outputs
+    };
+  }
+
+  std::optional<purepast_spec> to_purepast(spec sp) {
+    return sp.formula.match(
+      [&](black::only<FG> fg) -> std::optional<purepast_spec> {
+        auto arg = fg.to<logic::unary<LTLP>>()->argument().to<formula<pLTL>>();
+        if(!arg)
           return std::nullopt;
-        }
-
-        std::unordered_set<proposition> iset;
-        for(int i = 2; i < argc; i++)
-          iset.insert(sigma.proposition(std::string(argv[i])));
-
-        std::unordered_set<proposition> oset;
-        transform(*arg, [&](auto child) {
-          child.match(
-            [&](proposition p) {
-              if(iset.find(p) == iset.end())
-                oset.insert(p);
-            },
-            [](otherwise) { }
-          );
-        });
-
-        std::vector<proposition> inputs(iset.begin(), iset.end());
-        std::vector<proposition> outputs(oset.begin(), oset.end());
-
-        return spec{ 
-          .type = t, .formula = *arg, 
-          .inputs = inputs, .outputs = outputs
+        
+        return purepast_spec {
+          .type = fg.node_type(), .formula = *arg,
+          .inputs = sp.inputs, .outputs = sp.outputs
         };
       },
-      [&](black::otherwise) {
-        error("only F(pLTL) or G(pLTL) formulas are supported");
+      [](otherwise) -> std::optional<purepast_spec> { 
         return std::nullopt;
       }
     );
