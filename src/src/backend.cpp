@@ -48,7 +48,7 @@ namespace synth {
     fstr << to_string(qd) << "\n";
   }
 
-  black::tribool is_sat(qdimacs const& qd) {
+  bool is_sat(qdimacs const& qd) {
 
     using namespace std::literals;
 
@@ -84,11 +84,16 @@ namespace synth {
       dup2(null, 2);
       execlp("pedant", "pedant", input_filename.c_str(), nullptr);
       
-      throw std::runtime_error("unable to launch backend: "s + strerror(errno));
+      exit(errno);
     }
 
     close(fd);
-    wait(NULL);
+    int status = 0;
+    wait(&status);
+
+    int err = WEXITSTATUS(status);
+    if(err != 0)
+      throw std::runtime_error("unable to launch backend: "s + strerror(err));
 
     std::ifstream fstr(output_filename);
     if(!fstr.good())
@@ -107,10 +112,10 @@ namespace synth {
         return false;
     }
 
-    return black::tribool::undef;
+    throw std::runtime_error("unable to parse backend output: missing `SATISFIABLE` or `UNSATISFIABLE` tag");
   }
 
-  black::tribool is_sat(qbformula f) {
+  bool is_sat(qbformula f) {
     //std::cerr << "formula: " << to_string(f) << "\n";
     
     auto fl = flatten(f);

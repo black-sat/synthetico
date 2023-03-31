@@ -34,8 +34,8 @@ namespace synth {
     dqbdd
   };
 
-  black::tribool is_sat(qdimacs const& qd);
-  black::tribool is_sat(qbformula f);
+  bool is_sat(qdimacs const& qd);
+  bool is_sat(qbformula f);
 
 }
 

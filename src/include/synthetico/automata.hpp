@@ -29,6 +29,8 @@
 
 #include <synthetico/common.hpp>
 
+#include <ostream>
+
 namespace synth {
   
   namespace logic = black::logic;

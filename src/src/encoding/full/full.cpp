@@ -241,7 +241,7 @@ namespace synth {
       };
       return f.match(
         [](logic::boolean b) { return b; },
-        [](logic::proposition p) { return p; },
+        [](logic::proposition prop) { return prop; },
         [&](logic::negation<LTLP>, auto arg) { 
           return !snf(arg, p);
         },

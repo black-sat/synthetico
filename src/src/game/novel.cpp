@@ -158,10 +158,10 @@ namespace synth {
         std::cerr << "formula: " << to_string(formulaE) << "\n";
       }
 
-      if(is_sat(qdC) == true)
+      if(is_sat(qdC))
         return true;
       
-      if(is_sat(qdE) == true)
+      if(is_sat(qdE))
         return false;
       
       n++;
