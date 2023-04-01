@@ -50,6 +50,10 @@ namespace synth {
     );
   }
 
+  bformula rename(bformula f, renaming_t renaming) {
+    return *rename(qbformula{f}, renaming).to<bformula>();
+  }
+
   std::vector<proposition> 
   rename(std::vector<proposition> props, renaming_t renaming) {
     std::vector<proposition> result;

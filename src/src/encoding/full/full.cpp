@@ -189,6 +189,14 @@ namespace synth {
       
       transform(sp.formula, [&](auto child) {
         child.match(
+          [&](logic::tomorrow<LTLP> x) {
+            _variables.insert(ground(x));
+            _xreqs.insert(x);
+          },
+          [&](logic::w_tomorrow<LTLP> wx) {
+            _variables.insert(ground(wx));
+            _wxreqs.insert(wx);
+          },
           [&](logic::yesterday<LTLP> y) {
             _variables.insert(ground(y));
             _yreqs.insert(y);
@@ -196,6 +204,30 @@ namespace synth {
           [&](logic::w_yesterday<LTLP> z) {
             _variables.insert(ground(z));
             _zreqs.insert(z);
+          },
+          [&](logic::until<LTLP> u) {
+            _variables.insert(ground(X(u)));
+            _xreqs.insert(X(u));
+          },
+          [&](logic::release<LTLP> r) {
+            _variables.insert(ground(wX(r)));
+            _wxreqs.insert(wX(r));
+          },
+          [&](logic::w_until<LTLP> u) {
+            _variables.insert(ground(wX(u)));
+            _wxreqs.insert(wX(u));
+          },
+          [&](logic::s_release<LTLP> r) {
+            _variables.insert(ground(X(r)));
+            _xreqs.insert(X(r));
+          },
+          [&](logic::eventually<LTLP> f) {
+            _variables.insert(ground(X(f)));
+            _xreqs.insert(X(f));
+          },
+          [&](logic::always<LTLP> g) {
+            _variables.insert(ground(wX(g)));
+            _wxreqs.insert(wX(g));
           },
           [&](logic::since<LTLP> s) {
             _variables.insert(ground(Y(s)));

@@ -41,7 +41,7 @@ namespace synth {
     struct encoder {
 
       bformula win(player_t player, game_t type, size_t n);
-      bformula unravel(size_t n);
+      qbformula unravel(size_t n);
 
       qbformula encode(player_t player, game_t type, size_t n);
 
@@ -88,7 +88,8 @@ namespace synth {
       });
     }
 
-    bformula encoder::unravel(size_t n) {
+    qbformula encoder::unravel(size_t n) {
+      using namespace logic::fragments::QBF;
       return 
         stepped(aut.init, 0) &&
         big_and(sigma, black::range(0, n), [&](auto i) {
@@ -134,7 +135,7 @@ namespace synth {
     }
   }
 
-  static constexpr bool debug = true;
+  static constexpr bool debug = false;
 
   static black::tribool solve(automata aut, game_t type) {
     logic::alphabet &sigma = *aut.init.sigma();
@@ -146,22 +147,19 @@ namespace synth {
     while(true) {
       qbformula formulaC = 
         encoder{sigma, aut}.encode(player_t::controller, type, n);
-      qdimacs qdC = clausify(formulaC);
       
       qbformula formulaE = 
         encoder{sigma, aut}.encode(player_t::environment, type, n);
 
-      qdimacs qdE = clausify(formulaE);
-
       if(debug) {
         std::cerr << "- n = " << n << "\n";
-        std::cerr << "formula: " << to_string(formulaE) << "\n";
+        std::cerr << "formula: " << to_string(formulaC) << "\n";
       }
 
-      if(is_sat(qdC))
+      if(is_sat(formulaC))
         return true;
       
-      if(is_sat(qdE))
+      if(is_sat(formulaE))
         return false;
       
       n++;

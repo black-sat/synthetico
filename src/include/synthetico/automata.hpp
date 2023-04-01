@@ -41,7 +41,7 @@ namespace synth {
     std::vector<proposition> variables;
 
     bformula init;
-    bformula trans;
+    qbformula trans;
     bformula objective;
   };
 
@@ -54,6 +54,11 @@ namespace synth {
     str << "\noutputs:\n";
     for(auto out : aut.outputs) {
       str << "- " << to_string(out) << "\n";
+    }
+    
+    str << "\nvariables:\n";
+    for(auto var : aut.variables) {
+      str << "- " << to_string(var) << "\n";
     }
 
     str << "\ninit:\n";

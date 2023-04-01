@@ -59,6 +59,7 @@ namespace synth {
   using renaming_t = std::function<proposition(proposition)>;
 
   qbformula rename(qbformula f, renaming_t renaming);
+  bformula rename(bformula f, renaming_t renaming);
   std::vector<proposition> rename(std::vector<proposition>, renaming_t);
 
   struct primed_t {
@@ -74,6 +75,10 @@ namespace synth {
   inline proposition primed(proposition p) {
     return p.sigma()->proposition(primed_t{p.name()});
   }
+
+  inline bool is_primed(proposition p) {
+    return p.name().is<primed_t>();
+  }
   
   inline std::vector<proposition> primed(std::vector<proposition> props) {
     return rename(props, [](auto p) { return primed(p); } );
@@ -81,6 +86,10 @@ namespace synth {
 
   inline qbformula primed(qbformula f) {
     return rename(f, [](auto p) { return primed(p); } );
+  }
+  
+  inline bformula primed(bformula f) {
+    return *primed(qbformula{f}).to<bformula>();
   }
 
   struct fresh_t {
@@ -92,6 +101,10 @@ namespace synth {
 
   inline std::string to_string(fresh_t f) {
     return "{" + to_string(f.prop) + ", " + std::to_string(f.n) + "}";
+  }
+
+  inline bool is_fresh(proposition p) {
+    return p.name().is<fresh_t>();
   }
 
   struct fresh_gen_t {
@@ -128,8 +141,12 @@ namespace synth {
     return rename(f, [](auto p) { return stepped(p); } );
   }
   
+  inline qbformula stepped(qbformula f, size_t n) {
+    return rename(f, [&](auto p) { return stepped(p, n); });
+  }
+  
   inline bformula stepped(bformula f, size_t n) {
-    return *rename(f, [&](auto p) { return stepped(p, n); }).to<bformula>();
+    return *stepped(qbformula{f}, n).to<bformula>();
   }
   
   std::vector<proposition> 
@@ -142,7 +159,7 @@ namespace synth {
 namespace std {
   template<>
   struct hash<::synth::stepped_t> {
-    size_t operator()(::synth::stepped_t s) {
+    size_t operator()(::synth::stepped_t s) const {
       return ::black_internal::hash_combine(
         std::hash<::black::proposition>{}(s.prop),
         std::hash<size_t>{}(s.step)
@@ -152,14 +169,14 @@ namespace std {
 
   template<>
   struct hash<::synth::primed_t> {
-    size_t operator()(::synth::primed_t p) {
+    size_t operator()(::synth::primed_t p) const {
       return std::hash<::black::identifier>{}(p.label);
     }
   };
 
   template<>
   struct hash<::synth::fresh_t> {
-    size_t operator()(::synth::fresh_t s) {
+    size_t operator()(::synth::fresh_t s) const {
       return ::black_internal::hash_combine(
         std::hash<::black::proposition>{}(s.prop),
         std::hash<size_t>{}(s.n)
