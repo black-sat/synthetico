@@ -64,7 +64,8 @@ namespace synth {
 
   struct det_t {
     
-    det_t(automata _aut) : aut{std::move(_aut)}, sigma{*aut.init.sigma()} { }
+    det_t(automata _aut) 
+      : aut{std::move(_aut)}, vars0{aut.variables}, sigma{*aut.init.sigma()} { }
 
     bool is_valid(qbformula f);
     bool is_sat(qbformula f);
@@ -93,7 +94,7 @@ namespace synth {
     bformula phi_b(nu_t const& nu, proposition w);
     bformula phi_s(nu_t const& nu, proposition w);
     qbformula T_s(nu_t const& nu, proposition w);
-    bformula phi_v(nu_t const& nu, proposition w);
+    bformula phi_v(qbformula t_s, nu_t const& nu, proposition w);
     qbformula phi_c(nu_t const& nu, proposition w);
     bformula phi_0(proposition w);
     
@@ -106,6 +107,7 @@ namespace synth {
     automata determinize();
 
     automata aut;
+    std::vector<proposition> vars0;
     black::alphabet &sigma;
 
     std::unordered_map<proposition, bformula> iotas;
@@ -289,22 +291,25 @@ namespace synth {
   }
 
   proposition det_t::fresh() {
-    proposition p = _fresh(sigma.proposition("fresh"));
-    freshes.push_back(p);
+    proposition w = _fresh(sigma.proposition("fresh"));
+    freshes.push_back(w);
     
-    return p;
+    return w;
   }
 
   bformula det_t::iota(nu_t const&nu) {
     auto _iota = [&](nu_t part) {
-      for(auto fr : freshes) {
-        if(part.contains(fr) && part[fr] == true)
-          return iotas.at(fr);
+      for(auto w : freshes) {
+        if(part.contains(w) && part[w] == true)
+          return iotas.at(w);
       }
-      return to_formula(source(part));
+      return to_formula(part);
     };
 
-    return _iota(dest(nu)) || _iota(stardest(nu));
+    nu_t dest1 = filter(untag(dest(nu)), vars0);
+    nu_t dest2 = filter(untag(stardest(nu)), vars0);
+
+    return _iota(dest1) || _iota(dest2);
   }
 
   nu_t det_t::fresh_nu(proposition w) {
@@ -336,17 +341,22 @@ namespace synth {
     auto starloop = 
       implies(to_formula(untag(stardest(nu))), to_formula(source(nu)));
 
-    if(is_valid(loop || starloop))
-      return w && to_formula(source(nu)) && primed(w);
+    if(is_valid(loop) || is_valid(starloop)) {
+      std::cerr << " - self loop: true\n";
+      return w && to_formula(letter(nu)) && primed(w);
+    }
+    std::cerr << " - self loop: false\n";
 
     return sigma.bottom();
   }
 
   qbformula det_t::T_s(nu_t const&nu, proposition w) {
-    return (aut.trans && phi_r(nu)) || phi_b(nu, w) || phi_s(nu, w);
+    return 
+      ((aut.trans && phi_r(nu)) || phi_b(nu, w) || phi_s(nu, w)) && 
+      phi_c(nu, w) && phi_0(w);
   }
 
-  bformula det_t::phi_v(nu_t const&nu, proposition w) {
+  bformula det_t::phi_v(qbformula t_s, nu_t const&nu, proposition w) {
     std::vector<proposition> implicants;
 
     for(auto w_j : freshes) {
@@ -354,10 +364,18 @@ namespace synth {
         implicants.push_back(w_j);
     }
 
-    return !(
+    bformula result = !(
       w && to_formula(letter(nu)) && 
       (primed(iotas.at(w)) || big_or(sigma, implicants))
     );
+    
+    nu_t fw = fresh_nu(w);
+    qbformula loop = apply(t_s, fw && letter(nu) && primed(fw));
+    
+    if(!is_valid(loop))
+      result = sigma.top();
+
+    return result;
   }
 
   qbformula det_t::phi_c(nu_t const&nu, proposition w) {
@@ -370,21 +388,14 @@ namespace synth {
         return star(p);
       return p;
     });
-    
+
     qbformula core = 
       thereis(star(aut.variables), 
         (to_formula(star(untag(dest(nu)))) || 
          to_formula(star(untag(stardest(nu))))) && startrans
       );
     
-    nu_t fw = fresh_nu(w);
-    qbformula loop = apply(T_s(nu, w), fw && letter(nu) && primed(fw));
-    
-    qbformula vee = sigma.top();
-    if(is_valid(loop))
-      vee = phi_v(nu, w);
-    
-    return base && core && vee;
+    return base && core;
   }
 
   bformula det_t::phi_0(proposition w) {
@@ -393,11 +404,13 @@ namespace synth {
       if(x != w)
         lits.push_back(!x);
     
-    return implies(w, big_and(sigma, lits));
+    return implies(w, big_and(sigma, lits)) && 
+           implies(primed(w), primed(big_and(sigma, lits)));
   }
 
   qbformula det_t::T_f(nu_t const& nu, proposition w) {
-    return (T_s(nu, w) || phi_c(nu, w)) && phi_0(w);
+    qbformula t_s = T_s(nu, w);
+    return (t_s && phi_v(t_s, nu, w)) && phi_0(w);
   }
 
   void det_t::fix(nu_t const& nu, proposition w) {
@@ -467,24 +480,28 @@ namespace synth {
 
     //init();
 
-    //std::cerr << aut << "\n";
+    std::cerr << aut << "\n";
 
     while(true) {
       auto nu = has_nondet_edges();
+    
+      if(!nu)
+        return aut;
+
       std::cerr << "found nondet edges: " << to_string(to_formula(*nu)) << "\n";
       black_assert(
         std::find(begin(removed_edges), end(removed_edges), *nu) == 
           end(removed_edges)
       );
-
-      if(!nu)
-        return aut;
       
       std::optional<proposition> w;
       for(auto w_j : freshes) {
+        // std::cerr << "- iota check\n";
+        // std::cerr << "  - iota(nu): " << to_string(iota(*nu)) << "\n";
+        // std::cerr << "  - iota(" << to_string(w_j) << "): "
+        //           << to_string(iotas.at(w_j)) << "\n";
         if(is_valid(iff(iotas.at(w_j), iota(*nu)))) {
-          // std::cerr << "found w: " << to_string(w_j) << "\n";
-          // std::cerr << "- iota(w): " << to_string(iotas.at(w_j)) << "\n";
+          //std::cerr << "  - found w: " << to_string(w_j) << "\n";
           w = w_j;
           break;
         }
