@@ -93,7 +93,7 @@ namespace synth {
     
     nu_t fresh_nu(proposition w);
 
-    bformula phi_r(nu_t const& nu);
+    bformula phi_r(nu_t const& nu, proposition w);
     bformula phi_b(nu_t const& nu, proposition w);
     bformula phi_s(nu_t const& nu, proposition w);
     qbformula T_s(nu_t const& nu, proposition w);
@@ -376,8 +376,10 @@ namespace synth {
     return nu;
   }
 
-  bformula det_t::phi_r(nu_t const&nu) {
-    return !(
+  bformula det_t::phi_r(nu_t const&nu, proposition w) {
+    return 
+    !w && !primed(w) &&
+    !(
       to_formula(source(nu)) && to_formula(letter(nu)) && to_formula(dest(nu))
     ) && !(
       to_formula(source(nu)) && to_formula(letter(nu)) &&
@@ -406,7 +408,7 @@ namespace synth {
 
   qbformula det_t::T_s(nu_t const&nu, proposition w) {
     return 
-      ((aut.trans && phi_r(nu)) || phi_b(nu, w) || phi_s(nu, w) || 
+      ((aut.trans && phi_r(nu, w)) || phi_b(nu, w) || phi_s(nu, w) || 
       phi_c(nu, w)) && phi_0(w);
   }
 
@@ -415,7 +417,7 @@ namespace synth {
 
     for(auto w_j : freshes) {
       if(w_j != w && is_valid(implies(iotas.at(w_j), iotas.at(w))))
-        implicants.push_back(w_j);
+        implicants.push_back(primed(w_j));
     }
 
     bformula result = !(
@@ -492,7 +494,7 @@ namespace synth {
 
     aut.variables = vars;
     aut.init = init;
-    aut.trans = trans;
+    aut.trans = expand(trans);
     aut.objective = objective;
   }
 
@@ -523,7 +525,6 @@ namespace synth {
     bformula objective = aut.objective && !x_I;
 
     aut.variables = vars;
-    vars0 = vars;
     aut.init = init;
     aut.trans = trans;
     aut.objective = objective;
@@ -533,32 +534,33 @@ namespace synth {
   {
     using namespace logic::fragments::QBF;
 
-    init();
+    //init();
+    vars0 = aut.variables;
 
-    //std::cerr << aut << "\n";
+    std::cerr << aut << "\n";
 
     while(true) {
       auto nu = has_nondet_edges();
     
       if(!nu) {
-        std::cerr << "determinized: \n";
-        std::cerr << aut << "\n";
-        aut.trans = expand(aut.trans);
+        // std::cerr << "determinized: \n";
+        // std::cerr << aut << "\n";
+        // aut.trans = expand(aut.trans);
         return aut;
       }
 
-      //std::cerr << "found nondet edges: " << to_string(to_formula(*nu)) << "\n";
-      black_assert(
-        std::find(begin(removed_edges), end(removed_edges), *nu) == 
-          end(removed_edges)
-      );
+      std::cerr << "found nondet edges: " << to_string(to_formula(*nu)) << "\n";
+      // black_assert(
+      //   std::find(begin(removed_edges), end(removed_edges), *nu) == 
+      //     end(removed_edges)
+      // );
       
       std::optional<proposition> w;
       for(auto w_j : freshes) {
-        // std::cerr << "- iota check\n";
-        // std::cerr << "  - iota(nu): " << to_string(iota(*nu)) << "\n";
-        // std::cerr << "  - iota(" << to_string(w_j) << "): "
-        //           << to_string(iotas.at(w_j)) << "\n";
+        std::cerr << "- iota check\n";
+        std::cerr << "  - iota(nu): " << to_string(iota(*nu)) << "\n";
+        std::cerr << "  - iota(" << to_string(w_j) << "): "
+                  << to_string(iotas.at(w_j)) << "\n";
         if(is_valid(iff(iotas.at(w_j), iota(*nu)))) {
           //std::cerr << "  - found w: " << to_string(w_j) << "\n";
           w = w_j;
@@ -576,7 +578,7 @@ namespace synth {
 
       removed_edges.push_back(*nu);
 
-      //std::cerr << aut << "\n";
+      std::cerr << aut << "\n";
     }
   }  
 
