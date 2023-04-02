@@ -168,8 +168,8 @@ namespace synth {
 
   black::tribool is_realizable_novel(spec sp) 
   {
-    if(auto ppspec = to_purepast(sp); ppspec) 
-      return is_realizable_novel(*ppspec);
+    // if(auto ppspec = to_purepast(sp); ppspec) 
+    //   return is_realizable_novel(*ppspec);
 
     automata aut = encode(sp);
 

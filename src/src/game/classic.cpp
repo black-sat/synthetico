@@ -51,7 +51,7 @@ namespace synth {
       automata aut;
     };
 
-    static constexpr bool debug = false;
+    static constexpr bool debug = true;
 
     static qbformula print(std::string name, qbformula f) {
       if(debug)
@@ -151,8 +151,8 @@ namespace synth {
 
   black::tribool is_realizable_classic(spec sp) 
   {
-    if(auto ppspec = to_purepast(sp); ppspec) 
-      return is_realizable_classic(*ppspec);
+    // if(auto ppspec = to_purepast(sp); ppspec) 
+    //   return is_realizable_classic(*ppspec);
     
     automata aut = encode(sp);
 

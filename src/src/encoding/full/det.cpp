@@ -28,6 +28,7 @@
 #include <black/solver/solver.hpp>
 #include <black/sat/solver.hpp>
 #include <black/logic/prettyprint.hpp>
+#include <black/logic/cnf.hpp>
 
 #include <unordered_map>
 #include <iostream>
@@ -65,10 +66,12 @@ namespace synth {
   struct det_t {
     
     det_t(automata _aut) 
-      : aut{std::move(_aut)}, vars0{aut.variables}, sigma{*aut.init.sigma()} { }
+      : aut{std::move(_aut)}, sigma{*aut.init.sigma()} { }
 
     bool is_valid(qbformula f);
     bool is_sat(qbformula f);
+
+    bformula expand(qbformula f, nu_t const& nu = nu_t{});
 
     qbformula apply(qbformula, nu_t const& nu);
 
@@ -132,6 +135,53 @@ namespace synth {
     return !is_sat(!f);
   }
 
+  bformula det_t::expand(qbformula f, nu_t const& nu) {
+    using namespace logic::fragments::QBF;
+
+    auto result = f.match(
+      [](boolean b) { return b; },
+      [&](proposition p) -> bformula {
+        if(nu.contains(p))
+          return sigma.boolean(nu.at(p));
+        return p;
+      },
+      [&](unary u, auto arg) {
+        return logic::unary<Bool>(u.node_type(), expand(arg, nu));
+      },
+      [&](binary b, auto left, auto right) { 
+        return logic::binary<Bool>(
+          b.node_type(), expand(left, nu), expand(right, nu)
+        );
+      },
+      [&](qbf q, auto vars, auto matrix) -> bformula {
+        if(vars.empty())
+          return expand(matrix, nu);
+        
+        proposition var = vars.back();
+        vars.pop_back();
+
+        qbformula newqbf = 
+          vars.empty() ? matrix : qbf(q.node_type(), vars, matrix);
+
+        nu_t nutrue = nu;
+        nu_t nufalse = nu;
+        nutrue[var] = true;
+        nufalse[var] = false;
+
+        return q.node_type().match(
+          [&](qbf::type::thereis) {
+            return expand(newqbf, nutrue) || expand(newqbf, nufalse);
+          },
+          [&](qbf::type::foreach) {
+            return expand(newqbf, nutrue) && expand(newqbf, nufalse);
+          }
+        );
+      }
+    );
+
+    return black::remove_booleans_shallow(result);
+  }
+
   qbformula det_t::apply(qbformula f, nu_t const& nu) {
     using namespace logic::fragments::QBF;
 
@@ -150,7 +200,11 @@ namespace synth {
           binary(b.node_type(), apply(left, nu), apply(right, nu));
       },
       [&](qbf q, auto vars, auto matrix) {
-        return qbf(q.node_type(), vars, apply(matrix, nu));
+        nu_t newnu = nu;
+        for(auto v : vars)
+          newnu.erase(v);
+        
+        return qbf(q.node_type(), vars, apply(matrix, newnu));
       }
     );
   }
@@ -352,8 +406,8 @@ namespace synth {
 
   qbformula det_t::T_s(nu_t const&nu, proposition w) {
     return 
-      ((aut.trans && phi_r(nu)) || phi_b(nu, w) || phi_s(nu, w)) && 
-      phi_c(nu, w) && phi_0(w);
+      ((aut.trans && phi_r(nu)) || phi_b(nu, w) || phi_s(nu, w) || 
+      phi_c(nu, w)) && phi_0(w);
   }
 
   bformula det_t::phi_v(qbformula t_s, nu_t const&nu, proposition w) {
@@ -469,6 +523,7 @@ namespace synth {
     bformula objective = aut.objective && !x_I;
 
     aut.variables = vars;
+    vars0 = vars;
     aut.init = init;
     aut.trans = trans;
     aut.objective = objective;
@@ -478,17 +533,21 @@ namespace synth {
   {
     using namespace logic::fragments::QBF;
 
-    //init();
+    init();
 
-    std::cerr << aut << "\n";
+    //std::cerr << aut << "\n";
 
     while(true) {
       auto nu = has_nondet_edges();
     
-      if(!nu)
+      if(!nu) {
+        std::cerr << "determinized: \n";
+        std::cerr << aut << "\n";
+        aut.trans = expand(aut.trans);
         return aut;
+      }
 
-      std::cerr << "found nondet edges: " << to_string(to_formula(*nu)) << "\n";
+      //std::cerr << "found nondet edges: " << to_string(to_formula(*nu)) << "\n";
       black_assert(
         std::find(begin(removed_edges), end(removed_edges), *nu) == 
           end(removed_edges)

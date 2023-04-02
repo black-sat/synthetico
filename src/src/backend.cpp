@@ -91,9 +91,11 @@ namespace synth {
     int status = 0;
     wait(&status);
 
-    int err = WEXITSTATUS(status);
-    if(err != 0)
-      throw std::runtime_error("unable to launch backend: "s + strerror(err));
+    // if(WIFEXITED(status)) { 
+    //   int err = WEXITSTATUS(status);
+    //   if(err != 0)
+    //     throw std::runtime_error("unable to launch backend: "s + strerror(err));
+    // }
 
     std::ifstream fstr(output_filename);
     if(!fstr.good())
