@@ -41,7 +41,7 @@ namespace synth {
     std::vector<proposition> variables;
 
     bformula init;
-    qbformula trans;
+    bformula trans;
     bformula objective;
   };
 

@@ -27,7 +27,11 @@
 
 #include <synthetico/automata.hpp>
 
+#include <black/logic/logic.hpp>
+#include <unordered_map>
+
 namespace synth {
+
 
   automata determinize(automata);
 

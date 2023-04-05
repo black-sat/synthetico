@@ -23,12 +23,18 @@
 //
 
 #include <black/logic/logic.hpp>
+#include <black/logic/parser.hpp>
+#include <black/logic/prettyprint.hpp>
+#include <black/sat/solver.hpp>
 
 #include <synthetico/synthetico.hpp>
 
 #include <iostream>
 #include <sstream>
 #include <string>
+
+#include <sdd++/sdd++.hpp>
+#include <sdd/sdd.h>
 
 enum class algorithm {
   classic,
@@ -73,7 +79,7 @@ static std::string to_string(algorithm algo) {
 static int solve(synth::spec spec, algorithm algo) {
   black::tribool result = black::tribool::undef;
 
-  try {
+  //try {
     std::cerr << "Solving spec '" << to_string(spec.formula) << "' "
               << "with the '" << to_string(algo) << "' algorithm...\n";
     switch(algo){ 
@@ -84,9 +90,9 @@ static int solve(synth::spec spec, algorithm algo) {
         result = is_realizable_novel(spec);
         break;
     }
-  } catch(std::exception const& ex) {
-    std::cerr << argv0 << ": uncaught exception: " << ex.what() << "\n";
-  }
+  // } catch(std::exception const& ex) {
+  //   std::cerr << argv0 << ": uncaught exception: " << ex.what() << "\n";  
+  // }
 
   if(result == true)
     std::cout << "REALIZABLE\n";
@@ -165,6 +171,228 @@ static int formula(int argc, char **argv) {
   return solve(spec, algo);
 }
 
+using fsize_cache_t = std::unordered_map<synth::qbformula, size_t>;
+
+static size_t fsize(synth::qbformula f, fsize_cache_t &cache) {
+  using namespace black::logic::fragments::QBF;
+
+  if(cache.contains(f))
+    return cache.at(f);
+
+  auto result = f.match(
+    [](boolean) { return 1; },
+    [](proposition) { return 1; },
+    [&](unary, auto arg) {
+      return 1 + fsize(arg, cache);
+    },
+    [&](binary, auto left, auto right) {
+      return 1 + fsize(left, cache) + fsize(right, cache);
+    },
+    [&](qbf, auto, auto matrix) {
+      return 1 + fsize(matrix, cache);
+    }
+  );
+
+  cache.insert({f, result});
+  return result;
+}
+
+static size_t fsize(synth::qbformula f) {
+  fsize_cache_t cache;
+  return fsize(f, cache);
+}
+
+struct sdd_vars_t {
+  std::unordered_map<black::proposition, sdd::variable> vars;
+  std::unordered_map<sdd::variable, black::proposition> props;
+} ;
+
+static sdd::variable prop_to_var(
+  sdd::manager *mgr, sdd_vars_t &vars, black::proposition p
+) {
+  if(vars.vars.contains(p))
+    return vars.vars[p];
+  
+  unsigned newvar = unsigned(mgr->var_count()) + 1;
+  mgr->add_var_after_last();
+  sdd::variable var = newvar;
+  vars.vars.insert({p, var});
+  vars.props.insert({var, p});
+
+  return var;
+}
+
+static 
+sdd::node to_sdd(sdd::manager *mgr, sdd_vars_t &vars, synth::qbformula f) {
+  using namespace black::logic::fragments::QBF;
+
+  return f.match(
+    [&](boolean, bool value) {
+      return value ? mgr->top() : mgr->bottom();
+    },
+    [&](proposition p) {
+      return mgr->literal(prop_to_var(mgr, vars, p));
+    },
+    [&](negation, auto arg) {
+      return !to_sdd(mgr, vars, arg);
+    },
+    [&](conjunction c) {
+      sdd::node result = mgr->top();
+      for(auto op : c.operands())
+        result = result && to_sdd(mgr, vars, op);
+      return result;
+    },
+    [&](disjunction c) {
+      sdd::node result = mgr->bottom();
+      for(auto op : c.operands())
+        result = result || to_sdd(mgr, vars, op);
+      return result;
+    },
+    [&](implication, auto left, auto right) {
+      return to_sdd(mgr, vars, !left || right);
+    },
+    [&](iff, auto left, auto right) {
+      return to_sdd(mgr, vars, implies(left, right) && implies(right, left));
+    },
+    [&](qbf q, auto qvars, auto matrix) {
+      sdd::node sddmatrix = to_sdd(mgr, vars, matrix);
+      if(qvars.empty())
+        return sddmatrix;
+      
+      sdd::variable var = prop_to_var(mgr, vars, qvars.back());
+      qvars.pop_back();
+
+      return q.node_type().match(
+        [&](qbf::type::thereis) {
+          return sdd::exists(var, sddmatrix);
+        },
+        [&](qbf::type::foreach) {
+          return sdd::forall(var, sddmatrix);
+        }
+      );     
+    }
+  );
+}
+
+using node_cache_t = std::unordered_map<sdd::node, synth::bformula>;
+
+[[noreturn]] static void unreachable() {
+  __builtin_unreachable();
+}
+
+static synth::bformula to_formula(
+  black::alphabet &sigma, sdd::node n, node_cache_t &cache
+) {
+  if(cache.contains(n))
+    return cache.at(n);
+  
+  auto result = [&]() -> synth::bformula {
+    if(n.is_valid())
+      return sigma.top();
+    if(n.is_unsat())
+      return sigma.bottom();
+    
+    if(n.is_literal()) {
+      sdd::literal lit = n.literal();
+      if(lit)
+        return sigma.proposition(long(lit));
+      return !sigma.proposition(long(lit));
+    }
+
+    if(n.is_decision()) {
+      auto elements = n.elements();
+      return big_or(sigma, elements, [&](auto elem) {
+        return to_formula(sigma, elem.prime, cache) &&
+               to_formula(sigma, elem.sub, cache);
+      });
+    }
+    unreachable();
+  }();
+  
+  cache.insert({n, result});
+  return result;
+}
+
+static synth::bformula to_formula(black::alphabet &sigma, sdd::node n) {
+  node_cache_t cache;
+  return to_formula(sigma, n, cache);
+}
+
+static int test(int argc, char **argv) {
+  using namespace black::logic::fragments::QBF;
+
+  if(argc < 2)
+    error("insufficient command-line arguments");
+
+  alphabet sigma;
+  scope xi{sigma};
+
+  // synth::spec spec = *synth::parse(sigma, argc, argv, error);
+
+  // synth::automata aut = encode(spec);
+
+  sdd::manager mgr(10);
+
+  // auto test = thereis(aut.variables, 
+  //   thereis(synth::primed(aut.variables), 
+  //     aut.trans
+  //   )
+  // );
+
+  auto test1 = mgr.literal(3) || mgr.literal(4);
+  auto test2 = !(!mgr.literal(3) && !mgr.literal(4));
+
+  if(test1 == test2)
+    std::cerr << "test1 == test2\n";
+  else
+    std::cerr << "test1 != test2\n";
+
+
+  auto parsed = black::parse_formula(sigma, argv[1], error);
+  auto casted = parsed->to<synth::bformula>();
+  if(!casted)
+    error("Please give me only Boolean formulas");
+
+  auto test = *casted;
+
+  std::cerr << "test: " << to_string(test) << "\n";
+  
+  std::cerr << "computing SDD...\n";
+  sdd_vars_t vars;
+  sdd::node node = to_sdd(&mgr, vars, test);
+  std::cerr << "done!\n";
+
+  std::cerr << "SDD size: " << node.size() << "\n";
+  std::cerr << "SDD count: " << node.count() << "\n";
+
+
+  std::cerr << "reconstructing formula...\n";
+  synth::bformula f = to_formula(sigma, node);
+  std::cerr << "done!\n";
+
+  std::cerr << "formula size: " << fsize(f) << "\n";
+  std::cerr << "formula: " << to_string(f) << "\n";
+
+  std::cerr << "solving formula...\n";
+  auto solution = node.model();
+  std::cerr << "done: " << (solution.has_value() ? "SAT\n" : "UNSAT\n");
+
+  if(!solution)
+    return 0;
+
+  std::cerr << "solution:\n";
+  for(auto lit : *solution) {
+    sdd::variable var = lit.variable();
+    black::proposition p = vars.props.at(var);
+    if(lit)
+      std::cerr << "- " << to_string(p) << "\n";
+    else
+      std::cerr << "- " << to_string(!p) << "\n";
+  }
+
+  return 0;
+}
+
 int main(int argc, char **argv) {
   using namespace std::literals;
 
@@ -172,6 +400,9 @@ int main(int argc, char **argv) {
 
   if(argc >= 2 && argv[1] == "random"s)
     return random(argc - 1, argv + 1);
+
+  if(argc >= 2 && argv[1] == "test"s)
+    return test(argc - 1, argv + 1);
   
   return formula(argc, argv);
 }

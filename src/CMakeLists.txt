@@ -39,6 +39,7 @@ set (
 add_executable (synthetico ${LIB_SRC})
 
 target_link_libraries(synthetico PUBLIC black::black)
+target_link_libraries(synthetico PRIVATE sdd++::sdd++)
 
 target_include_directories(synthetico PUBLIC  
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

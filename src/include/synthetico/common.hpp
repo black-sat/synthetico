@@ -63,17 +63,17 @@ namespace synth {
   std::vector<proposition> rename(std::vector<proposition>, renaming_t);
 
   struct primed_t {
-    black::identifier label;
+    proposition prop;
 
     bool operator==(primed_t const&) const = default;
   };
 
   inline std::string to_string(primed_t p) {
-    return "{" + to_string(p.label) + "}'";
+    return "{" + to_string(p.prop) + "}'";
   }
 
   inline proposition primed(proposition p) {
-    return p.sigma()->proposition(primed_t{p.name()});
+    return p.sigma()->proposition(primed_t{p});
   }
 
   inline bool is_primed(proposition p) {
@@ -90,6 +90,20 @@ namespace synth {
   
   inline bformula primed(bformula f) {
     return *primed(qbformula{f}).to<bformula>();
+  }
+
+  struct starred_t {
+    proposition prop;
+
+    bool operator==(starred_t const&) const = default;
+  };
+
+  inline std::string to_string(starred_t s) {
+    return to_string(s.prop) + "*";
+  }
+
+  inline proposition star(proposition p) {
+    return p.sigma()->proposition(starred_t{p});
   }
 
   struct fresh_t {
@@ -170,7 +184,14 @@ namespace std {
   template<>
   struct hash<::synth::primed_t> {
     size_t operator()(::synth::primed_t p) const {
-      return std::hash<::black::identifier>{}(p.label);
+      return std::hash<::black::proposition>{}(p.prop);
+    }
+  };
+
+  template<>
+  struct hash<::synth::starred_t> {
+    size_t operator()(::synth::starred_t s) const {
+      return std::hash<::black::proposition>{}(s.prop);
     }
   };
 

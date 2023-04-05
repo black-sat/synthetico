@@ -75,7 +75,7 @@ namespace synth {
 
   proposition stepped(proposition p, size_t n) {
     if(auto pp = p.name().to<primed_t>(); pp.has_value()) {
-      return stepped(p.sigma()->proposition(pp->label), n + 1);
+      return stepped(pp->prop, n + 1);
     }
     
     return p.sigma()->proposition(stepped_t{p, n});
