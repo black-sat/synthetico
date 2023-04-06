@@ -327,35 +327,35 @@ static int test(int argc, char **argv) {
   alphabet sigma;
   scope xi{sigma};
 
-  // synth::spec spec = *synth::parse(sigma, argc, argv, error);
+  synth::spec spec = *synth::parse(sigma, argc, argv, error);
 
-  // synth::automata aut = encode(spec);
+  synth::automata aut = encode(spec);
 
-  sdd::manager mgr(10);
+  sdd::manager mgr(1);
 
-  // auto test = thereis(aut.variables, 
-  //   thereis(synth::primed(aut.variables), 
-  //     aut.trans
-  //   )
-  // );
+  auto test = thereis(aut.variables, 
+    thereis(synth::primed(aut.variables), 
+      aut.trans
+    )
+  );
 
-  auto test1 = mgr.literal(3) || mgr.literal(4);
-  auto test2 = !(!mgr.literal(3) && !mgr.literal(4));
+  // auto test1 = mgr.literal(3) || mgr.literal(4);
+  // auto test2 = !(!mgr.literal(3) && !mgr.literal(4));
 
-  if(test1 == test2)
-    std::cerr << "test1 == test2\n";
-  else
-    std::cerr << "test1 != test2\n";
+  // if(test1 == test2)
+  //   std::cerr << "test1 == test2\n";
+  // else
+  //   std::cerr << "test1 != test2\n";
 
 
-  auto parsed = black::parse_formula(sigma, argv[1], error);
-  auto casted = parsed->to<synth::bformula>();
-  if(!casted)
-    error("Please give me only Boolean formulas");
+  // auto parsed = black::parse_formula(sigma, argv[1], error);
+  // auto casted = parsed->to<synth::bformula>();
+  // if(!casted)
+  //   error("Please give me only Boolean formulas");
 
-  auto test = *casted;
+  // auto test = *casted;
 
-  std::cerr << "test: " << to_string(test) << "\n";
+  //std::cerr << "test: " << to_string(test) << "\n";
   
   std::cerr << "computing SDD...\n";
   sdd_vars_t vars;

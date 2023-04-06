@@ -106,6 +106,10 @@ namespace synth {
     return p.sigma()->proposition(starred_t{p});
   }
 
+  inline std::vector<proposition> star(std::vector<proposition> props) {
+    return rename(props, [](auto p) { return star(p); } );
+  }
+
   inline proposition untag(proposition prop) 
   {
     if(auto inner = prop.name().to<primed_t>(); inner) {
