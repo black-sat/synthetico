@@ -127,8 +127,11 @@ namespace synth {
     automata aut;
     black::alphabet &sigma;
     sdd::manager mgr;
-    var_manager_t vars;
     fresh_gen_t fresh_gen;
+    std::unordered_map<sdd::variable, sdd::variable> primes;
+    std::unordered_map<sdd::variable, sdd::variable> stars;
+    
+    var_manager_t vars;
     std::vector<sdd::variable> freshes;
     std::unordered_map<sdd::variable, sdd::node> iotas;
     
@@ -149,15 +152,17 @@ namespace synth {
   var_manager_t det_t::init_vars() {
     var_manager_t result{sigma, &mgr};
 
-    for(auto var : aut.variables) {
-      result.variable(var);
-      result.variable(synth::primed(var));
-      result.variable(synth::star(var));
+    for(auto prop : aut.variables) {
+      sdd::variable var = result.variable(prop);
+      sdd::variable pvar = result.variable(synth::primed(prop));
+      sdd::variable svar = result.variable(synth::star(prop));
+      primes.insert({var, pvar});
+      stars.insert({var, svar});
     }
 
     for(auto set : {aut.inputs, aut.outputs})
-      for(auto var : set)
-        result.variable(var);
+      for(auto prop : set)
+        result.variable(prop);
     
     return result;
   }
@@ -167,11 +172,17 @@ namespace synth {
   }
 
   sdd::variable det_t::primed(sdd::variable var) {
-    return vars.variable(synth::primed(synth::untag(vars.proposition(var))));
+    sdd::variable u = untag(var);
+    if(primes.contains(u))
+      return primes[u];
+    return u;
   }
 
   sdd::variable det_t::star(sdd::variable var) {
-    return vars.variable(synth::star(synth::untag(vars.proposition(var))));
+    sdd::variable u = untag(var);
+    if(stars.contains(u))
+      return stars[u];
+    return u;
   }
 
   sdd::literal det_t::untag(sdd::literal lit) {
@@ -200,7 +211,10 @@ namespace synth {
 
   sdd::node det_t::primed(sdd::node nu) {
     return nu.rename([&](sdd::variable var) {
-      return primed(var);
+      size_t n = mgr.var_count();
+      auto pvar = primed(var);
+      assert(n == mgr.var_count());
+      return pvar;
     });
   }
 
@@ -223,8 +237,10 @@ namespace synth {
     
     sdd::variable var = vars.variable(prop);
     freshes.push_back(var);
-    vars.variable(synth::primed(prop));
-    vars.variable(synth::star(prop));
+    sdd::variable pvar = vars.variable(synth::primed(prop));
+    sdd::variable svar = vars.variable(synth::star(prop));
+    primes.insert({var, pvar});
+    stars.insert({var, svar});
 
     return var;
   }
@@ -502,6 +518,7 @@ namespace synth {
     //init();
     std::cerr << aut << "\n";
 
+    size_t k = 0;
     while(true) {
       auto nu = has_nondet_edges();
     
@@ -516,7 +533,7 @@ namespace synth {
         };
       }
 
-      std::cerr << "found nondet edges\n";
+      std::cerr << "k = " << k << "\n";
       
       std::optional<sdd::variable> w;
       for(auto w_j : freshes) {
@@ -533,6 +550,7 @@ namespace synth {
         iotas.insert({*w, iota(*nu)});
         fix(*nu, *w);
       }
+      k++;
     }    
   }
 
