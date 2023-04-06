@@ -106,6 +106,18 @@ namespace synth {
     return p.sigma()->proposition(starred_t{p});
   }
 
+  inline proposition untag(proposition prop) 
+  {
+    if(auto inner = prop.name().to<primed_t>(); inner) {
+      return untag(inner->prop);
+    }
+    if(auto inner = prop.name().to<starred_t>(); inner) {
+      return untag(inner->prop);
+    }
+
+    return prop;
+  }
+
   struct fresh_t {
     proposition prop;
     size_t n;

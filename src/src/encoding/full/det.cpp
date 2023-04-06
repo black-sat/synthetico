@@ -33,7 +33,8 @@
 
 namespace synth {
 
-  struct var_manager_t {
+  class var_manager_t {
+  public:
     std::unordered_map<proposition, sdd::variable> vars;
     std::unordered_map<sdd::variable, proposition> props;
     black::alphabet &sigma;
@@ -43,23 +44,26 @@ namespace synth {
     var_manager_t(black::alphabet &_sigma, sdd::manager *_mgr) 
       : sigma{_sigma}, mgr{_mgr} { }
 
+    sdd::variable variable(proposition prop) {
+      if(vars.contains(prop))
+        return vars.at(prop);
+      
+      sdd::variable var = new_var();
+      vars.insert({prop, var});
+      props.insert({var, prop});
+
+      return var;
+    }
+
+    logic::proposition proposition(sdd::variable var) const {
+      return props.at(var);
+    }
+
+  private:
     sdd::variable new_var() {
       while(next_var > mgr->var_count())
         mgr->add_var_after_last();
       return next_var++;
-    }
-
-    void insert(std::pair<proposition, sdd::variable> p) {
-      vars.insert({p.first, p.second});
-      props.insert({p.second, p.first});
-    }
-
-    sdd::variable operator[](proposition prop) {
-      return vars.at(prop);
-    }
-
-    proposition operator[](sdd::variable var) const {
-      return props.at(var);
     }
   };
 
@@ -114,7 +118,6 @@ namespace synth {
 
   sdd::manager det_t::init_mgr() {
     return sdd::manager{
-      3 + // unused
       3 * aut.variables.size() + // normal, primed, and starred state variables 
       aut.inputs.size() +
       aut.outputs.size()
@@ -124,33 +127,29 @@ namespace synth {
   var_manager_t det_t::init_vars() {
     var_manager_t result{sigma, &mgr};
 
-    result.next_var = 3;
-    for(unsigned i = 1; i <= aut.variables.size(); ++i, result.next_var += 3) {
-      result.insert({aut.variables[i - 1], 3 * i});
-      result.insert({synth::primed(aut.variables[i - 1]), 3 * i + 1});
-      result.insert({synth::star(aut.variables[i - 1]), 3 * i + 2});
+    for(auto var : aut.variables) {
+      result.variable(var);
+      result.variable(synth::primed(var));
+      result.variable(synth::star(var));
     }
 
-    for(unsigned i = 0; i < aut.inputs.size(); ++i, ++result.next_var)
-      result.insert({aut.inputs[i], result.next_var});
-    for(unsigned i = 0; i < aut.outputs.size(); ++i, ++result.next_var)
-      result.insert({aut.outputs[i], result.next_var});
-
-    result.next_var++;
-
+    for(auto set : {aut.inputs, aut.outputs})
+      for(auto var : set)
+        result.variable(var);
+    
     return result;
   }
 
   sdd::variable det_t::untag(sdd::variable var) {
-    return (unsigned(var) / 3) * 3;
+    return vars.variable(synth::untag(vars.proposition(var)));
   }
 
   sdd::variable det_t::primed(sdd::variable var) {
-    return unsigned(untag(var)) + 1;
+    return vars.variable(synth::primed(synth::untag(vars.proposition(var))));
   }
 
   sdd::variable det_t::star(sdd::variable var) {
-    return unsigned(untag(var)) + 2;
+    return vars.variable(synth::star(synth::untag(vars.proposition(var))));
   }
 
   sdd::literal det_t::untag(sdd::literal lit) {
@@ -189,31 +188,17 @@ namespace synth {
     });
   }
 
-
   bool det_t::is_primed(sdd::variable var) {
-    return (unsigned(var) % 3) == 1;
+    return vars.proposition(var).name().is<primed_t>();
   }
 
   bool det_t::is_star(sdd::variable var) {
-    return (unsigned(var) % 3) == 2;
+    return vars.proposition(var).name().is<starred_t>();
   }
 
   sdd::variable det_t::fresh() {
-    while(vars.next_var % 3 != 0)
-      vars.next_var++;
-
-    sdd::variable var = vars.new_var();
-    sdd::variable pvar = vars.new_var();
-    sdd::variable svar = vars.new_var();
-    
     proposition prop = fresh_gen(sigma.proposition("fresh"));
-
-    vars.insert({prop, var});
-    vars.insert({synth::primed(prop), pvar});
-    vars.insert({synth::star(prop), svar});
-    variables.push_back(prop);
-
-    return var;
+    return vars.variable(prop);
   }
 
   sdd::node det_t::to_sdd(synth::qbformula f) {
@@ -224,7 +209,7 @@ namespace synth {
         return value ? mgr.top() : mgr.bottom();
       },
       [&](proposition p) {
-        return mgr.literal(vars[p]);
+        return mgr.literal(vars.variable(p));
       },
       [&](negation, auto arg) {
         return !to_sdd(arg);
@@ -252,7 +237,7 @@ namespace synth {
         if(qvars.empty())
           return sddmatrix;
         
-        sdd::variable var = vars[qvars.back()];
+        sdd::variable var = vars.variable(qvars.back());
         qvars.pop_back();
 
         return q.node_type().match(
@@ -280,8 +265,8 @@ namespace synth {
       if(n.is_literal()) {
         sdd::literal lit = n.literal();
         if(lit)
-          return vars[lit.variable()];
-        return !vars[lit.variable()];
+          return vars.proposition(lit.variable());
+        return !vars.proposition(lit.variable());
       }
 
       if(n.is_decision()) {
@@ -311,7 +296,7 @@ namespace synth {
     });
 
     for(auto prop : variables) {
-      sdd::variable var = vars[prop];
+      sdd::variable var = vars.variable(prop);
       sdd::node test = base && primed(var) && !star(var);
       if(test.is_sat()) {
         sdd::node nu = mgr.top();
