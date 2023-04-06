@@ -35,8 +35,8 @@ namespace synth {
 
   class var_manager_t {
   public:
-    std::unordered_map<proposition, sdd::variable> vars;
-    std::unordered_map<sdd::variable, proposition> props;
+    std::unordered_map<logic::proposition, sdd::variable> vars;
+    std::unordered_map<sdd::variable, logic::proposition> props;
     black::alphabet &sigma;
     sdd::manager *mgr;
     unsigned next_var = 1;
@@ -44,7 +44,7 @@ namespace synth {
     var_manager_t(black::alphabet &_sigma, sdd::manager *_mgr) 
       : sigma{_sigma}, mgr{_mgr} { }
 
-    sdd::variable variable(proposition prop) {
+    sdd::variable variable(logic::proposition prop) {
       if(vars.contains(prop))
         return vars.at(prop);
       
