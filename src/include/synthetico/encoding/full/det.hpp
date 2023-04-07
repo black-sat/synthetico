@@ -34,6 +34,7 @@ namespace synth {
 
 
   automata determinize(automata);
+  automata determinize_old(automata);
 
 }
 

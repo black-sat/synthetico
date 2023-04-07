@@ -32,6 +32,7 @@ set (
   src/encoding/purepast.cpp
   src/encoding/full/full.cpp
   src/encoding/full/det.cpp
+  src/encoding/full/det-old.cpp
   src/game/novel.cpp
   src/game/classic.cpp
 )

@@ -35,35 +35,16 @@
 
 namespace synth {
 
-  struct starred_t {
-    proposition prop;
-
-    bool operator==(starred_t const&) const = default;
-  };
-
-  inline std::string to_string(starred_t s) {
-    return to_string(s.prop) + "*";
-  }
-
-}
-
-template<>
-struct std::hash<::synth::starred_t> {
-  size_t operator()(::synth::starred_t s) {
-    return std::hash<::black::proposition>{}(s.prop);
-  }
-};
-
-namespace synth {
+  using nu_t = std::unordered_map<proposition, bool>;
 
   static nu_t operator&&(nu_t nu1, nu_t const& nu2) {
     nu1.insert(begin(nu2), end(nu2));
     return nu1;
   }
 
-  struct det_t {
+  struct det_old_t {
     
-    det_t(automata _aut) 
+    det_old_t(automata _aut) 
       : aut{std::move(_aut)}, sigma{*aut.init.sigma()} { }
 
     bool is_valid(qbformula f);
@@ -115,7 +96,7 @@ namespace synth {
     fresh_gen_t _fresh;
   };
 
-  bool det_t::is_sat(qbformula f) {
+  bool det_old_t::is_sat(qbformula f) {
     black::scope xi{sigma};
     
     auto z3 = black::sat::solver::get_solver("z3", xi);
@@ -127,11 +108,11 @@ namespace synth {
     return false;
   }
   
-  bool det_t::is_valid(qbformula f) {
+  bool det_old_t::is_valid(qbformula f) {
     return !is_sat(!f);
   }
 
-  bformula expand(qbformula f, nu_t const& nu) {
+  static bformula expand(qbformula f, nu_t const& nu = nu_t{}) {
     using namespace logic::fragments::QBF;
 
     alphabet &sigma = *f.sigma();
@@ -180,7 +161,7 @@ namespace synth {
     return black::remove_booleans_shallow(result);
   }
 
-  qbformula det_t::apply(qbformula f, nu_t const& nu) {
+  qbformula det_old_t::apply(qbformula f, nu_t const& nu) {
     using namespace logic::fragments::QBF;
 
     return f.match(
@@ -207,34 +188,12 @@ namespace synth {
     );
   }
 
-  static proposition star(proposition prop) {
-    return prop.sigma()->proposition(starred_t{prop});
-  }
-
-  [[maybe_unused]]
-  static std::vector<proposition> star(std::vector<proposition> props) {
-    return rename(props, [](auto p) { return star(p); });
-  }
-
   static qbformula star(qbformula f) {
     return rename(f, [&](auto p) { return star(p); });
   }
   
   static bformula star(bformula f) {
     return *star(qbformula{f}).to<bformula>();
-  }
-
-  static proposition untag(proposition prop) {
-    black::alphabet &sigma = *prop.sigma();
-    
-    if(auto inner = prop.name().to<primed_t>(); inner) {
-      return untag(sigma.proposition(inner->label));
-    }
-    if(auto inner = prop.name().to<starred_t>(); inner) {
-      return untag(inner->prop);
-    }
-
-    return prop;
   }
 
   static nu_t rename(nu_t nu, renaming_t renaming) {
@@ -271,7 +230,7 @@ namespace synth {
     return nu2;
   }
 
-  nu_t det_t::to_nu(black::sat::solver const&sat) {
+  nu_t det_old_t::to_nu(black::sat::solver const&sat) {
     nu_t nu;
     for(auto const& set : {
       aut.inputs, aut.outputs, aut.variables, 
@@ -288,11 +247,11 @@ namespace synth {
     return nu;
   }
 
-  nu_t det_t::source(nu_t const&nu) {
+  nu_t det_old_t::source(nu_t const&nu) {
     return filter(nu, aut.variables);
   }
   
-  nu_t det_t::letter(nu_t const&nu) {
+  nu_t det_old_t::letter(nu_t const&nu) {
     std::vector<proposition> letters;
     letters.insert(begin(letters), begin(aut.inputs), end(aut.inputs));
     letters.insert(begin(letters), begin(aut.outputs), end(aut.outputs));
@@ -300,15 +259,15 @@ namespace synth {
     return filter(nu, letters);
   }
 
-  nu_t det_t::dest(nu_t const&nu) {
+  nu_t det_old_t::dest(nu_t const&nu) {
     return filter(nu, primed(aut.variables));
   }
 
-  nu_t det_t::stardest(nu_t const&nu) {
+  nu_t det_old_t::stardest(nu_t const&nu) {
     return filter(nu, star(aut.variables));
   }
 
-  bformula det_t::to_formula(nu_t const&nu) {
+  bformula det_old_t::to_formula(nu_t const&nu) {
     std::vector<bformula> lits;
     for(auto [key, value] : nu) {
       if(value)
@@ -320,7 +279,7 @@ namespace synth {
     return big_and(sigma, lits);
   }
 
-  qbformula det_t::detformula() {
+  qbformula det_old_t::detformula() {
     return aut.trans && rename(aut.trans, [](proposition p) {
       if(is_primed(p))
         return star(untag(p));
@@ -328,7 +287,7 @@ namespace synth {
     });
   }
 
-  std::optional<nu_t> det_t::has_nondet_edges() {
+  std::optional<nu_t> det_old_t::has_nondet_edges() {
     black::scope xi{sigma};
     
     auto z3 = black::sat::solver::get_solver("z3", xi);
@@ -342,29 +301,26 @@ namespace synth {
     return {};
   }
 
-  proposition det_t::fresh() {
+  proposition det_old_t::fresh() {
     proposition w = _fresh(sigma.proposition("fresh"));
     freshes.push_back(w);
     
     return w;
   }
 
-  bformula det_t::iota(nu_t const&nu) {
+  bformula det_old_t::iota(nu_t const&nu) {
     auto _iota = [&](nu_t part) {
       for(auto w : freshes) {
         if(part.contains(w) && part[w] == true)
           return iotas.at(w);
       }
-      return to_formula(part);
+      return to_formula(filter(part, vars0));
     };
 
-    nu_t dest1 = filter(untag(dest(nu)), vars0);
-    nu_t dest2 = filter(untag(stardest(nu)), vars0);
-
-    return _iota(dest1) || _iota(dest2);
+    return _iota(untag(dest(nu))) || _iota(untag(stardest(nu)));
   }
 
-  nu_t det_t::fresh_nu(proposition w) {
+  nu_t det_old_t::fresh_nu(proposition w) {
     nu_t nu;
     for(auto prop : aut.variables)
       if(prop != w)
@@ -374,7 +330,7 @@ namespace synth {
     return nu;
   }
 
-  bformula det_t::phi_r(nu_t const&nu, proposition w) {
+  bformula det_old_t::phi_r(nu_t const&nu, proposition w) {
     return 
     !w && !primed(w) &&
     !(
@@ -385,12 +341,12 @@ namespace synth {
     );
   }
 
-  bformula det_t::phi_b(nu_t const&nu, proposition w) {
+  bformula det_old_t::phi_b(nu_t const&nu, proposition w) {
     return to_formula(source(nu)) && to_formula(letter(nu)) &&
            primed(to_formula(fresh_nu(w)));
   }
 
-  bformula det_t::phi_s(nu_t const&nu, proposition w) {
+  bformula det_old_t::phi_s(nu_t const&nu, proposition w) {
     auto loop = implies(to_formula(untag(dest(nu))), to_formula(source(nu)));
     auto starloop = 
       implies(to_formula(untag(stardest(nu))), to_formula(source(nu)));
@@ -404,13 +360,13 @@ namespace synth {
     return sigma.bottom();
   }
 
-  qbformula det_t::T_s(nu_t const&nu, proposition w) {
+  qbformula det_old_t::T_s(nu_t const&nu, proposition w) {
     return 
       ((aut.trans && phi_r(nu, w)) || phi_b(nu, w) || phi_s(nu, w) || 
       phi_c(nu, w)) && phi_0(w);
   }
 
-  bformula det_t::phi_f(qbformula t_s, nu_t const&nu, proposition w) {
+  bformula det_old_t::phi_f(qbformula t_s, nu_t const&nu, proposition w) {
     std::vector<proposition> implicants;
 
     for(auto w_j : freshes) {
@@ -432,7 +388,7 @@ namespace synth {
     return result;
   }
 
-  qbformula det_t::phi_c(nu_t const&nu, proposition w) {
+  qbformula det_old_t::phi_c(nu_t const&nu, proposition w) {
     using namespace logic::fragments::QBF;
     bformula base = w && !primed(w);
 
@@ -452,7 +408,7 @@ namespace synth {
     return base && core;
   }
 
-  bformula det_t::phi_0(proposition w) {
+  bformula det_old_t::phi_0(proposition w) {
     std::vector<bformula> lits;
     for(auto x : aut.variables)
       if(x != w)
@@ -462,12 +418,12 @@ namespace synth {
            implies(primed(w), primed(big_and(sigma, lits)));
   }
 
-  qbformula det_t::T_f(nu_t const& nu, proposition w) {
+  qbformula det_old_t::T_f(nu_t const& nu, proposition w) {
     qbformula t_s = T_s(nu, w);
     return (t_s && phi_f(t_s, nu, w)) && phi_0(w);
   }
 
-  void det_t::fix(nu_t const& nu, proposition w) {
+  void det_old_t::fix(nu_t const& nu, proposition w) {
     // state variables
     std::vector<proposition> vars = aut.variables;
     if(std::find(begin(vars), end(vars), w) == end(vars))
@@ -496,7 +452,7 @@ namespace synth {
     aut.objective = objective;
   }
 
-  void det_t::init() {
+  void det_old_t::init() {
     using namespace logic::fragments::QBF;
     
     proposition x_I = _fresh(sigma.proposition("init_fresh"));
@@ -528,7 +484,7 @@ namespace synth {
     aut.objective = objective;
   }
 
-  automata det_t::determinize() 
+  automata det_old_t::determinize() 
   {
     using namespace logic::fragments::QBF;
 
@@ -580,8 +536,8 @@ namespace synth {
     }
   }  
 
-  automata determinize(automata aut) {
-    return det_t{aut}.determinize();
+  automata determinize_old(automata aut) {
+    return det_old_t{aut}.determinize();
   }
 
 }

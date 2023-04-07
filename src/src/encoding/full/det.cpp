@@ -29,6 +29,8 @@
 
 #include <iostream>
 #include <algorithm>
+#include <string>
+#include <sstream>
 #include <cassert>
 
 namespace synth {
@@ -93,6 +95,8 @@ namespace synth {
     bool is_primed(sdd::variable);
     bool is_star(sdd::variable);
     
+    std::vector<sdd::literal> literals(sdd::node nu);
+
     sdd::variable fresh();
 
     sdd::node to_sdd(synth::qbformula f);
@@ -100,6 +104,9 @@ namespace synth {
     using node_cache_t = std::unordered_map<sdd::node, synth::bformula>;
     synth::bformula to_formula(sdd::node n, node_cache_t &cache);
     synth::bformula to_formula(sdd::node n);
+
+    std::string to_string(sdd::literal lit);
+    std::string to_string(std::vector<sdd::literal> const&lits);
 
     sdd::node filter(sdd::node, std::vector<proposition> const&);
     sdd::node source(sdd::node);
@@ -112,17 +119,19 @@ namespace synth {
     std::optional<sdd::node> has_nondet_edges();
     sdd::node iota(sdd::node nu);
 
-    sdd::node phi_r(sdd::node nu, sdd::variable w);
+    sdd::node phi_r(sdd::node nu, sdd::variable w, bool w_is_new);
     sdd::node phi_b(sdd::node nu, sdd::variable w);
     sdd::node phi_s(sdd::node nu, sdd::variable w);
-    sdd::node T_s(sdd::node nu, sdd::variable w);
     sdd::node phi_f(sdd::node t_s, sdd::node nu, sdd::variable w);
     sdd::node phi_c(sdd::node nu, sdd::variable w);
     sdd::node phi_0(sdd::variable w);
     
-    sdd::node T_f(sdd::node nu, sdd::variable w);
+    sdd::node T_s(sdd::node nu, sdd::variable w, bool w_is_new);
+    sdd::node T_f(sdd::node nu, sdd::variable w, bool w_is_new);
 
-    void fix(sdd::node nu, sdd::variable w);
+    void print_edges();
+
+    void fix(sdd::node nu, sdd::variable w, bool w_is_new);
 
     automata aut;
     black::alphabet &sigma;
@@ -156,6 +165,12 @@ namespace synth {
       sdd::variable var = result.variable(prop);
       sdd::variable pvar = result.variable(synth::primed(prop));
       sdd::variable svar = result.variable(synth::star(prop));
+      std::cerr << "( " << unsigned(var) << ", " 
+                << black::to_string(prop) << ")\n";
+      std::cerr << "( " << unsigned(pvar) << ", " 
+                << black::to_string(synth::primed(prop)) << ")\n";
+      std::cerr << "( " << unsigned(svar) << ", " 
+                << black::to_string(synth::star(prop)) << ")\n";
       primes.insert({var, pvar});
       stars.insert({var, svar});
     }
@@ -230,6 +245,36 @@ namespace synth {
 
   bool det_t::is_star(sdd::variable var) {
     return vars.proposition(var).name().is<starred_t>();
+  }
+
+  std::vector<sdd::literal> det_t::literals(sdd::node nu) {
+    std::vector<sdd::literal> lits;
+    for(auto var : mgr.variables()) {
+      if(nu.value(var) == true)
+        lits.push_back(var);
+      if(nu.value(var) == false)
+        lits.push_back(!var);
+    }
+    return lits;
+  }
+
+  std::string det_t::to_string(sdd::literal lit) {
+    if(lit)
+      return black::to_string(vars.proposition(lit.variable()));
+    return black::to_string(!vars.proposition(lit.variable()));
+  }
+
+  std::string det_t::to_string(std::vector<sdd::literal> const&lits) {
+    std::stringstream str;
+    if(lits.empty())
+      return "{}";
+    
+    str << "{ " << to_string(lits.front());
+    for(size_t i = 1; i < lits.size(); ++i)
+      str << ", " << to_string(lits[i]);
+    str << " }";
+
+    return str.str();
   }
 
   sdd::variable det_t::fresh() {
@@ -343,11 +388,13 @@ namespace synth {
       sdd::variable var = vars.variable(prop);
       sdd::node test = base && primed(var) && !star(var);
       if(test.is_sat()) {
+        std::cerr << "undefined variable: " << black::to_string(prop) << "\n";
         sdd::node nu = mgr.top();
         auto model = *test.model();
         for(auto lit : model)
-          if(unsigned(lit.variable()) >= 3)
-            nu = nu && lit;
+          nu = nu && lit;
+        assert(nu.value(primed(var)) == true);
+        assert(nu.value(star(var)) == false);
         return nu;
       }
     }
@@ -381,11 +428,11 @@ namespace synth {
   }
 
   sdd::node det_t::dest1(sdd::node nu) {
-    return filter(nu, synth::primed(aut.variables));
+    return filter(nu, synth::primed(variables));
   }
 
   sdd::node det_t::dest2(sdd::node nu) {
-    return filter(nu, synth::star(aut.variables));
+    return filter(nu, synth::star(variables));
   }
 
   sdd::node det_t::q_w(sdd::variable w) {
@@ -405,20 +452,20 @@ namespace synth {
         if(part.value(w) == true)
           return iotas.at(w);
       }
-      return part;
+      return filter(part, aut.variables);
     };
 
-    sdd::node part1 = filter(untag(dest1(nu)), aut.variables);
-    sdd::node part2 = filter(untag(dest2(nu)), aut.variables);
-
-    return _iota(part1) || _iota(part2);
+    return _iota(untag(dest1(nu))) || _iota(untag(dest2(nu)));
   }
 
-  sdd::node det_t::phi_r(sdd::node nu, sdd::variable w) {
-    return 
-      !(source(nu) && letter(nu) && dest1(nu)) &&
-      !(source(nu) && letter(nu) && dest2(nu)) &&
-      !w && !primed(w);
+  sdd::node det_t::phi_r(sdd::node nu, sdd::variable w, bool w_is_new) {
+    sdd::node base = 
+      !(source(nu) && letter(nu) && primed(untag(dest1(nu)))) &&
+      !(source(nu) && letter(nu) && primed(untag(dest2(nu))));
+    
+    if(w_is_new)
+      return base && !w && !primed(w);
+    return base;
   }
 
   sdd::node det_t::phi_b(sdd::node nu, sdd::variable w) {
@@ -455,16 +502,16 @@ namespace synth {
     return implies(w, q_w(w)) && implies(primed(w), primed(q_w(w)));
   }
 
-  sdd::node det_t::T_s(sdd::node nu, sdd::variable w) {
+  sdd::node det_t::T_s(sdd::node nu, sdd::variable w, bool w_is_new) {
     return (
-      (trans && phi_r(nu, w)) || 
+      (trans && phi_r(nu, w, w_is_new)) || 
       phi_b(nu, w) || phi_s(nu, w) || phi_c(nu, w)
     ) && phi_0(w);
   }
 
   sdd::node det_t::phi_f(sdd::node t_s, sdd::node nu, sdd::variable w) 
   {
-    sdd::node loop = t_s && q_w(w) && letter(nu) && primed(q_w(w));
+    sdd::node loop = implies(q_w(w) && letter(nu) && primed(q_w(w)), t_s);
     
     if(!loop.is_valid())
       return mgr.top();
@@ -478,23 +525,25 @@ namespace synth {
     return !(w && letter(nu) && (primed(iotas.at(w)) || implicants));
   }
   
-  sdd::node det_t::T_f(sdd::node nu, sdd::variable w) {
-    sdd::node t_s = T_s(nu, w);
+  sdd::node det_t::T_f(sdd::node nu, sdd::variable w, bool w_is_new) {
+    sdd::node t_s = T_s(nu, w, w_is_new);
     return t_s && phi_f(t_s, nu, w);
+    //return trans && phi_r(nu, w, w_is_new);
   }
 
-  void det_t::fix(sdd::node nu, sdd::variable w) {
+  void det_t::fix(sdd::node nu, sdd::variable w, bool w_is_new) {
     // state variables
     std::vector<proposition> newvars = variables;
-    proposition wprop = vars.proposition(w);
-    if(std::find(begin(newvars), end(newvars), wprop) == end(newvars))
-      newvars.push_back(wprop);
+    if(w_is_new)
+      newvars.push_back(vars.proposition(w));
 
     // initial state
     sdd::node newinit = init && !w;
 
     // transition relation
-    sdd::node newtrans = T_f(nu, w);
+    sdd::node newtrans = T_f(nu, w, w_is_new);
+
+    assert(newtrans != trans);
 
     // final state
     sdd::node were_final = 
@@ -513,13 +562,32 @@ namespace synth {
     objective = newobjective;
   }
 
+  void det_t::print_edges() {
+    sdd::node t = trans;
+
+    std::cerr << "edges:\n";
+    while(t.is_sat()) {
+      sdd::node nu = mgr.top();
+      auto model = *t.model();
+      for(auto lit : model) {
+        assert(!is_star(lit.variable()));
+        nu = nu && lit;
+      }
+
+      std::cerr << " - " << to_string(literals(nu)) << "\n";
+      t = t && !nu;
+    }
+  }
+
   automata det_t::determinize() {
 
     //init();
     std::cerr << aut << "\n";
 
+    [[maybe_unused]]
     size_t k = 0;
     while(true) {
+      print_edges();
       auto nu = has_nondet_edges();
     
       if(!nu) {
@@ -533,7 +601,13 @@ namespace synth {
         };
       }
 
-      std::cerr << "k = " << k << "\n";
+      std::cerr << "k = " << k << " - nondet edge found:\n"; 
+      std::cerr << " - src(nu):   " << to_string(literals(source(*nu))) << "\n"
+                << " - ltr(nu):   " << to_string(literals(letter(*nu))) << "\n"
+                << " - dest1(nu): " << to_string(literals(dest1(*nu))) << "\n"
+                << " - dest2(nu): " << to_string(literals(dest2(*nu))) << "\n"
+                << " - iota(nu):  " << black::to_string(to_formula(iota(*nu))) << "\n";
+      assert(untag(dest1(*nu)) != untag(dest2(*nu)));
       
       std::optional<sdd::variable> w;
       for(auto w_j : freshes) {
@@ -544,11 +618,13 @@ namespace synth {
       }
 
       if(w) {
-        fix(*nu, *w);
+        //std::cerr << "recycled w: " << black::to_string(vars.proposition(*w)) << "\n";
+        fix(*nu, *w, false);
       } else {
+        std::cerr << "fresh w, iota: " << black::to_string(to_formula(iota(*nu))) << "\n";
         w = fresh();
         iotas.insert({*w, iota(*nu)});
-        fix(*nu, *w);
+        fix(*nu, *w, true);
       }
       k++;
     }    

@@ -69,7 +69,7 @@ namespace synth {
   };
 
   inline std::string to_string(primed_t p) {
-    return "{" + to_string(p.prop) + "}'";
+    return to_string(p.prop) + "'";
   }
 
   inline proposition primed(proposition p) {
