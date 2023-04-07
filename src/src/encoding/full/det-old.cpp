@@ -44,7 +44,7 @@ namespace synth {
 
   struct det_old_t {
     
-    det_old_t(automata _aut) 
+    det_old_t(automaton _aut) 
       : aut{std::move(_aut)}, sigma{*aut.init.sigma()} { }
 
     bool is_valid(qbformula f);
@@ -84,9 +84,9 @@ namespace synth {
 
     void init();
 
-    automata determinize();
+    automaton determinize();
 
-    automata aut;
+    automaton aut;
     std::vector<proposition> vars0;
     black::alphabet &sigma;
 
@@ -484,7 +484,7 @@ namespace synth {
     aut.objective = objective;
   }
 
-  automata det_old_t::determinize() 
+  automaton det_old_t::determinize() 
   {
     using namespace logic::fragments::QBF;
 
@@ -536,7 +536,7 @@ namespace synth {
     }
   }  
 
-  automata determinize_old(automata aut) {
+  automaton determinize_old(automaton aut) {
     return det_old_t{aut}.determinize();
   }
 

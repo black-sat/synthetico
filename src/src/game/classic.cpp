@@ -48,7 +48,7 @@ namespace synth {
 
       logic::alphabet &sigma;
       game_t type;
-      automata aut;
+      automaton aut;
     };
 
     static constexpr bool debug = true;
@@ -109,7 +109,7 @@ namespace synth {
 
   }
 
-  static black::tribool solve(automata aut, game_t type) { 
+  static black::tribool solve(automaton aut, game_t type) { 
     using namespace logic::fragments::QBF;
 
     alphabet &sigma = *aut.init.sigma();
@@ -144,7 +144,7 @@ namespace synth {
 
   black::tribool is_realizable_classic(purepast_spec sp) 
   {
-    automata aut = encode(sp);
+    automaton aut = encode(sp);
 
     return solve(aut, sp.type);
   }
@@ -154,7 +154,7 @@ namespace synth {
     // if(auto ppspec = to_purepast(sp); ppspec) 
     //   return is_realizable_classic(*ppspec);
     
-    automata aut = encode(sp);
+    automaton aut = encode(sp);
 
     return solve(aut, game_t::eventually{});
   }

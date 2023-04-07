@@ -46,7 +46,7 @@ namespace synth {
       qbformula encode(player_t player, game_t type, size_t n);
 
       logic::alphabet &sigma;
-      automata aut;
+      automaton aut;
 
     };
 
@@ -137,7 +137,7 @@ namespace synth {
 
   static constexpr bool debug = false;
 
-  static black::tribool solve(automata aut, game_t type) {
+  static black::tribool solve(automaton aut, game_t type) {
     logic::alphabet &sigma = *aut.init.sigma();
 
     if(debug)
@@ -171,14 +171,14 @@ namespace synth {
     // if(auto ppspec = to_purepast(sp); ppspec) 
     //   return is_realizable_novel(*ppspec);
 
-    automata aut = encode(sp);
+    automaton aut = encode(sp);
 
     return solve(aut, game_t::eventually{});
   }
 
   black::tribool is_realizable_novel(purepast_spec sp) 
   {
-    automata aut = encode(sp);
+    automaton aut = encode(sp);
 
     return solve(aut, sp.type);
   }

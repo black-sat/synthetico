@@ -35,7 +35,7 @@ namespace synth {
   
   namespace logic = black::logic;
 
-  struct automata {
+  struct automaton {
     std::vector<proposition> inputs;
     std::vector<proposition> outputs;
     std::vector<proposition> variables;
@@ -45,7 +45,7 @@ namespace synth {
     bformula objective;
   };
 
-  inline std::ostream &operator<<(std::ostream &str, automata aut) {
+  inline std::ostream &operator<<(std::ostream &str, automaton aut) {
     str << "inputs:\n";
     for(auto in : aut.inputs) {
       str << "- " << to_string(in) << "\n";

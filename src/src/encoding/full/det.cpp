@@ -70,14 +70,14 @@ namespace synth {
   };
 
   struct det_t {
-    det_t(automata _aut) 
+    det_t(automaton _aut) 
       : aut{std::move(_aut)}, sigma{*aut.init.sigma()}, 
         mgr{init_mgr()}, vars{init_vars()}, 
         variables{aut.variables},
         init{to_sdd(aut.init)}, trans{to_sdd(aut.trans)},
         objective{to_sdd(aut.objective)} { }
 
-    automata determinize();
+    automaton determinize();
 
     sdd::manager init_mgr();
     var_manager_t init_vars();
@@ -133,7 +133,7 @@ namespace synth {
 
     void fix(sdd::node nu, sdd::variable w, bool w_is_new);
 
-    automata aut;
+    automaton aut;
     black::alphabet &sigma;
     sdd::manager mgr;
     fresh_gen_t fresh_gen;
@@ -579,7 +579,7 @@ namespace synth {
     }
   }
 
-  automata det_t::determinize() {
+  automaton det_t::determinize() {
 
     //init();
     std::cerr << aut << "\n";
@@ -591,7 +591,7 @@ namespace synth {
       auto nu = has_nondet_edges();
     
       if(!nu) {
-        return automata {
+        return automaton {
           .inputs = std::move(aut.inputs),
           .outputs = std::move(aut.outputs),
           .variables = std::move(variables),
@@ -630,7 +630,7 @@ namespace synth {
     }    
   }
 
-  automata determinize(automata aut) {
+  automaton determinize(automaton aut) {
     return det_t{aut}.determinize();
   }
 }

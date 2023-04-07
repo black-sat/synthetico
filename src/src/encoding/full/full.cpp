@@ -44,7 +44,7 @@ namespace synth {
 
       static bformula snf(formula<LTLP> f, bool prime);
 
-      automata encode(spec sp);
+      automaton encode(spec sp);
 
       std::vector<logic::tomorrow<LTLP>> xreqs;
       std::vector<logic::w_tomorrow<LTLP>> wxreqs;
@@ -342,7 +342,7 @@ namespace synth {
       );
     }
 
-    automata encoder::encode(spec sp) {
+    automaton encoder::encode(spec sp) {
       logic::alphabet &sigma = *sp.formula.sigma();
       sp.formula = encoder::nnf(sp.formula);
 
@@ -374,12 +374,12 @@ namespace synth {
         return !ground(x);
       });
 
-      return automata{sp.inputs, sp.outputs, variables, init, trans, objective};
+      return automaton{sp.inputs, sp.outputs, variables, init, trans, objective};
     }
   }
 
-  automata encode(spec sp) {
-    return determinize(encoder{}.encode(sp));
+  automaton encode(spec sp) {
+    return monoidet(encoder{}.encode(sp));
   }
 
 }

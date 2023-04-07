@@ -29,7 +29,7 @@
 #include <synthetico/automata.hpp>
 
 namespace synth {
-  automata encode(spec sp);
+  automaton encode(spec sp);
 }
 
 #endif // SYNTH_ENCODING_FULL_HPP

@@ -29,7 +29,7 @@
 #include <synthetico/automata.hpp>
 
 namespace synth {
-  automata encode(purepast_spec sp);
+  automaton encode(purepast_spec sp);
 }
 
 #endif // SYNTH_ENCODING_PUREPAST_HPP

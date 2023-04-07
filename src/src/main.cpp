@@ -329,7 +329,7 @@ static int test(int argc, char **argv) {
 
   synth::spec spec = *synth::parse(sigma, argc, argv, error);
 
-  synth::automata aut = encode(spec);
+  synth::automaton aut = encode(spec);
 
   sdd::manager mgr(1);
 

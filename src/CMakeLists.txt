@@ -33,6 +33,7 @@ set (
   src/encoding/full/full.cpp
   src/encoding/full/det.cpp
   src/encoding/full/det-old.cpp
+  src/encoding/full/monoidet.cpp
   src/game/novel.cpp
   src/game/classic.cpp
 )

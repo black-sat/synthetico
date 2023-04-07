@@ -43,7 +43,7 @@ namespace synth {
 
       static bformula snf(formula<pLTL> f);
 
-      automata encode(purepast_spec sp);
+      automaton encode(purepast_spec sp);
 
       std::vector<logic::yesterday<pLTL>> yreqs;
       std::vector<logic::w_yesterday<pLTL>> zreqs;
@@ -224,7 +224,7 @@ namespace synth {
       );
     }
 
-    automata encoder::encode(purepast_spec sp) {
+    automaton encoder::encode(purepast_spec sp) {
       logic::alphabet &sigma = *sp.formula.sigma();
       sp.formula = encoder::nnf(sp.formula);
 
@@ -254,11 +254,11 @@ namespace synth {
         }
       );
 
-      return automata{sp.inputs, sp.outputs, variables, init, trans, objective};
+      return automaton{sp.inputs, sp.outputs, variables, init, trans, objective};
     }
   }
 
-  automata encode(purepast_spec sp) {
+  automaton encode(purepast_spec sp) {
     return encoder{}.encode(sp);
   }
   

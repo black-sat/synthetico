@@ -33,8 +33,9 @@
 namespace synth {
 
 
-  automata determinize(automata);
-  automata determinize_old(automata);
+  automaton determinize(automaton);
+  automaton determinize_old(automaton);
+  automaton monoidet(automaton);
 
 }
 
