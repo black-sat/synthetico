@@ -35,10 +35,12 @@ Now, you can run the `synth` executable from the `build` directory.
 
 The tool expects on the command line the following arguments:
 1. the choice of which algorithm to run:
+
    a. `novel`, for our novel symbolic tableau-based algorithm
+   
    b. `classic`, for a classic fixpoint backward reachability algorithm
-2. a $\mathsf{F}(\alpha)$ or $\mathsf{G}(\alpha)$ formula
-3. the list of which variables in the formula have to be treated as *inputs* (i.e. *uncontrollable* variables)
+3. a $\mathsf{F}(\alpha)$ or $\mathsf{G}(\alpha)$ formula
+4. the list of which variables in the formula have to be treated as *inputs* (i.e. *uncontrollable* variables)
 
 Please be sure to *quote* the formula on the shell's command line with *single quotes*.
 
