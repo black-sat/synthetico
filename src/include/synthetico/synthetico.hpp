@@ -33,5 +33,7 @@
 #include <synthetico/random.hpp>
 #include <synthetico/game/novel.hpp>
 #include <synthetico/game/classic.hpp>
+#include <synthetico/game/bdd.hpp>
+#include <synthetico/game/VarMgr.hpp>
 
 #endif // SYNTH_SYNTH_HPP
