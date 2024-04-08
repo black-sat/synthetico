@@ -14,7 +14,7 @@
 /**
  * \brief A dictionary that maps variable names to indices and vice versa.
  */
-    class VarMgr {
+    class varmgr {
     private:
 
         std::shared_ptr<CUDD::Cudd> mgr_;
@@ -29,9 +29,9 @@
     public:
 
         /**
-         * \brief Constructs a VarMgr with no variables.
+         * \brief Constructs a varmgr with no variables.
          */
-        VarMgr();
+        varmgr();
 
         /**
          * \brief Creates BDD variables and associates each with a name.

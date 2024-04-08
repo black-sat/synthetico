@@ -28,12 +28,14 @@
 #include <synthetico/common.hpp>
 #include <synthetico/spec.hpp>
 #include <synthetico/automata.hpp>
+#include <synthetico/automatabdd.hpp>
+#include <synthetico/varmgr.hpp>
 #include <synthetico/qbf.hpp>
 #include <synthetico/backend.hpp>
 #include <synthetico/random.hpp>
 #include <synthetico/game/novel.hpp>
 #include <synthetico/game/classic.hpp>
 #include <synthetico/game/bdd.hpp>
-#include <synthetico/game/VarMgr.hpp>
+
 
 #endif // SYNTH_SYNTH_HPP

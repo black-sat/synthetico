@@ -1,7 +1,7 @@
 //
 // Created by shuzhu on 05/04/24.
 //
-#include <synthetico/synthetico.hpp>
+#include "synthetico/synthetico.hpp"
 
 #include <cstring>
 #include <stdexcept>
@@ -9,11 +9,11 @@
 #include <algorithm>
 
 
-VarMgr::VarMgr() {
+varmgr::varmgr() {
     mgr_ = std::make_shared<CUDD::Cudd>();
 }
 
-void VarMgr::create_named_variables(
+void varmgr::create_named_variables(
         const std::vector<std::string>& variable_names) {
     for (const std::string& name : variable_names) {
         // Only create the variable if it doesn't already exist
@@ -26,7 +26,7 @@ void VarMgr::create_named_variables(
     }
 }
 
-std::size_t VarMgr::create_state_variables(std::size_t variable_count) {
+std::size_t varmgr::create_state_variables(std::size_t variable_count) {
     std::size_t automaton_id = state_variables_.size();
 
     // Creates an additional space for variables at index automaton_id,
@@ -50,7 +50,7 @@ std::size_t VarMgr::create_state_variables(std::size_t variable_count) {
     return automaton_id;
 }
 
-std::size_t VarMgr::create_product_state_space(
+std::size_t varmgr::create_product_state_space(
         const std::vector<std::size_t>& automaton_ids) {
     std::size_t product_automaton_id = state_variables_.size();
 
@@ -66,7 +66,7 @@ std::size_t VarMgr::create_product_state_space(
     return product_automaton_id;
 }
 
-std::size_t VarMgr::create_complement_state_space(
+std::size_t varmgr::create_complement_state_space(
         const std::size_t automaton_id) {
     std::size_t complement_automaton_id = state_variables_.size();
 
@@ -80,12 +80,12 @@ std::size_t VarMgr::create_complement_state_space(
     return complement_automaton_id;
 }
 
-CUDD::BDD VarMgr::state_variable(std::size_t automaton_id, std::size_t i)
+CUDD::BDD varmgr::state_variable(std::size_t automaton_id, std::size_t i)
 const {
     return state_variables_[automaton_id][i];
 }
 
-CUDD::BDD VarMgr::state_vector_to_bdd(std::size_t automaton_id,
+CUDD::BDD varmgr::state_vector_to_bdd(std::size_t automaton_id,
                                       const std::vector<int>& state_vector)
 const {
     CUDD::BDD bdd = mgr_->bddOne();
@@ -101,7 +101,7 @@ const {
     return bdd;
 }
 
-void VarMgr::partition_variables(const std::vector<std::string>& input_names,
+void varmgr::partition_variables(const std::vector<std::string>& input_names,
                                  const std::vector<std::string>& output_names) {
     if (!input_variables_.empty() || !output_variables_.empty()) {
         throw std::runtime_error(
@@ -127,51 +127,51 @@ void VarMgr::partition_variables(const std::vector<std::string>& input_names,
     }
 }
 
-std::shared_ptr<CUDD::Cudd> VarMgr::cudd_mgr() const {
+std::shared_ptr<CUDD::Cudd> varmgr::cudd_mgr() const {
     return mgr_;
 }
 
-CUDD::BDD VarMgr::name_to_variable(const std::string& name) const {
+CUDD::BDD varmgr::name_to_variable(const std::string& name) const {
     return name_to_variable_.at(name);
 }
 
-std::string VarMgr::index_to_name(int index) const {
+std::string varmgr::index_to_name(int index) const {
     return index_to_name_.at(index);
 }
 
-std::size_t VarMgr::total_variable_count() const {
+std::size_t varmgr::total_variable_count() const {
     return name_to_variable_.size() + total_state_variable_count();
 }
 
-std::size_t VarMgr::total_state_variable_count() const {
+std::size_t varmgr::total_state_variable_count() const {
     return state_variable_count_;
 }
 
-std::size_t VarMgr::state_variable_count(std::size_t automaton_id) const {
+std::size_t varmgr::state_variable_count(std::size_t automaton_id) const {
     return state_variables_[automaton_id].size();
 }
 
-std::size_t VarMgr::input_variable_count() const {
+std::size_t varmgr::input_variable_count() const {
     return input_variables_.size();
 }
 
-std::size_t VarMgr::output_variable_count() const {
+std::size_t varmgr::output_variable_count() const {
     return output_variables_.size();
 }
 
-CUDD::BDD VarMgr::input_cube() const {
+CUDD::BDD varmgr::input_cube() const {
     return mgr_->computeCube(input_variables_);
 }
 
-CUDD::BDD VarMgr::output_cube() const {
+CUDD::BDD varmgr::output_cube() const {
     return mgr_->computeCube(output_variables_);
 }
 
-CUDD::BDD VarMgr::state_variables_cube(std::size_t automaton_id) const {
+CUDD::BDD varmgr::state_variables_cube(std::size_t automaton_id) const {
     return mgr_->computeCube(state_variables_[automaton_id]);
 }
 
-std::vector<int> VarMgr::make_eval_vector(
+std::vector<int> varmgr::make_eval_vector(
         std::size_t automaton_id, const std::vector<int>& state_vector) const {
     std::vector<int> eval_vector(total_variable_count(), 0);
 
@@ -183,7 +183,7 @@ std::vector<int> VarMgr::make_eval_vector(
     return eval_vector;
 }
 
-std::vector<int> VarMgr::make_state_eval_vector(
+std::vector<int> varmgr::make_state_eval_vector(
         std::size_t automaton_id, const std::vector<int>& state_vector) const {
     std::vector<int> eval_vector(state_variables_[automaton_id].size(), 0);
 
@@ -195,7 +195,7 @@ std::vector<int> VarMgr::make_state_eval_vector(
     return eval_vector;
 }
 
-std::vector<CUDD::BDD> VarMgr::make_compose_vector(
+std::vector<CUDD::BDD> varmgr::make_compose_vector(
         std::size_t automaton_id, const std::vector<CUDD::BDD>& state_bdds) const {
     std::vector<CUDD::BDD> compose_vector(total_variable_count(),
                                           mgr_->bddZero());
@@ -232,7 +232,7 @@ std::vector<CUDD::BDD> VarMgr::make_compose_vector(
     return compose_vector;
 }
 
-std::vector<std::string> VarMgr::variable_labels() const {
+std::vector<std::string> varmgr::variable_labels() const {
     std::vector<std::string> labels(total_variable_count());
 
     for (const auto& index_and_name : index_to_name_) {
@@ -249,7 +249,7 @@ std::vector<std::string> VarMgr::variable_labels() const {
     return labels;
 }
 
-std::vector<std::string> VarMgr::output_variable_labels() const {
+std::vector<std::string> varmgr::output_variable_labels() const {
     std::vector<std::string> labels(output_variable_count());
 
     for (std::size_t i = 0; i < output_variable_count(); ++i) {
@@ -260,7 +260,7 @@ std::vector<std::string> VarMgr::output_variable_labels() const {
     return labels;
 }
 
-std::vector<std::string> VarMgr::input_variable_labels() const {
+std::vector<std::string> varmgr::input_variable_labels() const {
     std::vector<std::string> labels(input_variable_count());
 
     for (std::size_t i = 0; i < input_variable_count(); ++i) {
@@ -271,7 +271,7 @@ std::vector<std::string> VarMgr::input_variable_labels() const {
     return labels;
 }
 
-std::vector<std::string> VarMgr::state_variable_labels(
+std::vector<std::string> varmgr::state_variable_labels(
         std::size_t automaton_id) const {
     std::vector<std::string> labels;
     labels.reserve(total_state_variable_count());
@@ -285,14 +285,14 @@ std::vector<std::string> VarMgr::state_variable_labels(
     return labels;
 }
 
-void VarMgr::dump_dot(const CUDD::ADD& add, const std::string& filename) const {
+void varmgr::dump_dot(const CUDD::ADD& add, const std::string& filename) const {
     std::vector<CUDD::ADD> single(1, add);
     std::vector<std::string> single_label(1, "");
 
     dump_dot(single, single_label, filename);
 }
 
-void VarMgr::dump_dot(const std::vector<CUDD::ADD>& adds,
+void varmgr::dump_dot(const std::vector<CUDD::ADD>& adds,
                       const std::vector<std::string>& function_labels,
                       const std::string& filename) const {
     std::vector<std::string> variable_labels = this->variable_labels();
@@ -333,11 +333,11 @@ void VarMgr::dump_dot(const std::vector<CUDD::ADD>& adds,
     }
 }
 
-std::size_t VarMgr::automaton_num() const {
+std::size_t varmgr::automaton_num() const {
     return state_variables_.size();
 }
 
-std::string VarMgr::bdd_to_string(const CUDD::BDD& bdd) const {
+std::string varmgr::bdd_to_string(const CUDD::BDD& bdd) const {
     std::stringstream ss;
     ss << bdd;
     std::string s = ss.str();

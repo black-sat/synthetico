@@ -27,13 +27,14 @@ set (
   src/common.cpp
   src/spec.cpp
   src/automata.cpp
+  src/automatabdd.cpp
+  src/varmgr.cpp
   src/qbf.cpp
   src/backend.cpp
   src/random.cpp
   src/game/novel.cpp
   src/game/classic.cpp
   src/game/bdd.cpp
-  src/game/VarMgr.cpp
 )
 
 add_executable (synthetico ${LIB_SRC})
