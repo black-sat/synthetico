@@ -24,6 +24,7 @@ namespace synth {
         bformula objective;
 
         std::shared_ptr<varmgr> var_mgr_;
+        std::size_t automaton_id_;
         std::vector<int> initial_state_;
         std::vector<CUDD::BDD> transition_function_;
         CUDD::BDD final_states_;

@@ -7,6 +7,7 @@
 #include <black/logic/prettyprint.hpp>
 
 #include <unordered_set>
+#include "iostream"
 
 namespace synth {
 
@@ -205,6 +206,7 @@ namespace synth {
             );
         }
 
+
         automatabdd encoderbdd::encodebdd(spec sp, std::shared_ptr<varmgr> var_mgr) {
             logic::alphabet &sigma = *sp.formula.sigma();
             sp.formula = encoderbdd::nnf(sp.formula);
@@ -223,7 +225,6 @@ namespace synth {
 
             var_mgr->partition_variables(ins, outs);
             std::vector<int> initial_state;
-            initial_state.resize(zreqs.size() + yreqs.size());
 
             for (size_t i = 0; i < zreqs.size(); i++){
                 initial_state.push_back(1);
@@ -232,6 +233,18 @@ namespace synth {
                 initial_state.push_back(0);
             }
 
+            black_assert(initial_state.size() == variables.size());
+
+            std::vector<std::string> state_vars;
+            for (auto prop : variables){
+                state_vars.push_back(to_string(prop));
+            }
+
+            for (size_t i = 0; i < variables.size(); i++){
+                black_assert(state_vars[i] == to_string(variables[i]));
+            }
+
+            size_t automata_id = var_mgr->create_named_state_variables(state_vars);
 
             bformula init =
                     big_and(sigma, zreqs, [](auto req) {
@@ -246,10 +259,22 @@ namespace synth {
 
             bformula trans = big_and(sigma, variables, [](proposition var) {
                 auto req = lift(var).to<logic::unary<pLTL>>();
+                std::cerr << to_string(var) << "\n";
+                std::cerr << to_string(req->argument()) << "\n";
+                std::cerr << to_string(snf(req->argument())) << "\n";
+                std::cerr << to_string(primed(var)) << "\n";
                 black_assert(req);
-
+                std::cerr << to_string(logic::iff(primed(var), snf(req->argument()))) << "\n";
                 return logic::iff(primed(var), snf(req->argument()));
             });
+
+            for (auto var : variables){
+                auto req = lift(var).to<logic::unary<pLTL>>();
+                auto con = snf(req->argument());
+                std::cerr << to_string(con) << "\n";
+                //TODO
+                //convert propositional formula con to BDD
+            }
 
             bformula objective = sp.type.match(
                     [&](game_t::eventually) {
@@ -260,9 +285,18 @@ namespace synth {
                     }
             );
 
-            CUDD::BDD final_states = var_mgr->cudd_mgr()->bddOne();
+            CUDD::BDD final_states = sp.type.match(
+                    [&](game_t::eventually) {
+                        std::string name = to_string(ground(Y(sp.formula)));
+                        return var_mgr->name_to_variable(name);
+                    },
+                    [&](game_t::always) {
+                        std::string name = to_string(ground(Z(sp.formula)));
+                        return var_mgr->name_to_variable(name);
+                    }
+            );
 
-            return automatabdd{sp.inputs, sp.outputs, variables, init, trans, objective, var_mgr, initial_state, transition_function, final_states};
+            return automatabdd{sp.inputs, sp.outputs, variables, init, trans, objective, var_mgr, automata_id, initial_state, transition_function, final_states};
         }
     }
 

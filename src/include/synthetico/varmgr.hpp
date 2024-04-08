@@ -53,6 +53,7 @@
          */
         std::size_t create_state_variables(std::size_t variable_count);
 
+        std::size_t create_named_state_variables(const std::vector<std::string>& variable_names);
         /**
          * \brief Registers a new automaton ID associated with a product state space.
          *
