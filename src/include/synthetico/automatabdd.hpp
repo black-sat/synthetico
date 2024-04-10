@@ -19,10 +19,6 @@ namespace synth {
         std::vector<proposition> outputs;
         std::vector<proposition> variables;
 
-        bformula init;
-        bformula trans;
-        bformula objective;
-
         std::shared_ptr<varmgr> var_mgr_;
         std::size_t automaton_id_;
         std::vector<int> initial_state_;

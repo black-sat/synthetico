@@ -235,7 +235,7 @@ namespace synth {
         }
 
         automatabdd encoderbdd::encodebdd(spec sp, std::shared_ptr<varmgr> var_mgr) {
-            logic::alphabet &sigma = *sp.formula.sigma();
+//            logic::alphabet &sigma = *sp.formula.sigma();
             sp.formula = encoderbdd::nnf(sp.formula);
 
             collect(sp);
@@ -285,30 +285,6 @@ namespace synth {
 
             size_t automata_id = var_mgr->create_named_state_variables(state_vars);
 
-            bformula init =
-                    big_and(sigma, zreqs, [](auto req) {
-                        return ground(req);
-                    }) &&
-                    big_and(sigma, yreqs, [](auto req) {
-                        return !ground(req);
-                    });
-
-
-            bformula trans = big_and(sigma, variables, [](proposition var) {
-                auto req = lift(var).to<logic::unary<pLTL>>();
-                if (debug) {
-                    std::cerr << to_string(var) << "\n";
-                    std::cerr << to_string(req->argument()) << "\n";
-                    std::cerr << to_string(snf(req->argument())) << "\n";
-                    std::cerr << to_string(primed(var)) << "\n";
-                }
-                black_assert(req);
-                if (debug) {
-                    std::cerr << to_string(logic::iff(primed(var), snf(req->argument()))) << "\n";
-                }
-                return logic::iff(primed(var), snf(req->argument()));
-            });
-
 
             std::vector<CUDD::BDD> transition_function;
 
@@ -321,14 +297,6 @@ namespace synth {
                 transition_function.push_back(formula_to_bdd(con, var_mgr));
             }
 
-            bformula objective = sp.type.match(
-                    [&](game_t::eventually) {
-                        return ground(Y(sp.formula));
-                    },
-                    [&](game_t::always) {
-                        return ground(Z(sp.formula));
-                    }
-            );
 
             CUDD::BDD final_states = sp.type.match(
                     [&](game_t::eventually) {
@@ -341,7 +309,7 @@ namespace synth {
                     }
             );
 
-            return automatabdd{sp.inputs, sp.outputs, variables, init, trans, objective, var_mgr, automata_id, initial_state, transition_function, final_states};
+            return automatabdd{sp.inputs, sp.outputs, variables, var_mgr, automata_id, initial_state, transition_function, final_states};
         }
     }
 
@@ -359,15 +327,6 @@ namespace synth {
         for(auto out : aut.outputs) {
             str << "- " << to_string(out) << "\n";
         }
-
-        str << "\ninit:\n";
-        str << "- " << to_string(aut.init) << "\n";
-
-        str << "\ntrans:\n";
-        str << "- " << to_string(aut.trans) << "\n";
-
-        str << "\nobjective:\n";
-        str << "- " << to_string(aut.objective) << "\n";
 
         return str;
     }
