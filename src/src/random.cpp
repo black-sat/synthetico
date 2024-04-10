@@ -22,7 +22,7 @@
 // SOFTWARE.
 //
 
-#include <synthetico/synthetico.hpp>
+#include "synthetico/synthetico.hpp"
 
 #include <black/internal/debug/random_formula.hpp>
 

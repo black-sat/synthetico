@@ -24,7 +24,7 @@
 
 #include <black/logic/logic.hpp>
 
-#include <synthetico/synthetico.hpp>
+#include "synthetico/synthetico.hpp"
 
 #include <iostream>
 #include <sstream>

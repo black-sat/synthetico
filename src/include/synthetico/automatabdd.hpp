@@ -7,8 +7,8 @@
 
 #include <black/logic/logic.hpp>
 
-#include <synthetico/synthetico.hpp>
-#include <synthetico/varmgr.hpp>
+#include "synthetico.hpp"
+#include "varmgr.hpp"
 
 namespace synth {
 

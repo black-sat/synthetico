@@ -34,7 +34,9 @@ set (
   src/random.cpp
   src/game/novel.cpp
   src/game/classic.cpp
-  src/game/bdd.cpp
+        src/game/bdd.cpp
+  src/transducer.cpp
+  src/quantification.cpp
 )
 
 add_executable (synthetico ${LIB_SRC})

@@ -11,6 +11,8 @@
 
 #include "cuddObj.hh"
 
+namespace synth {
+
 /**
  * \brief A dictionary that maps variable names to indices and vice versa.
  */
@@ -39,7 +41,7 @@
          * \param variable_names The names of the variables to create. A new variable
          *   is only created if a variable by that name does not already exist.
          */
-        void create_named_variables(const std::vector<std::string>& variable_names);
+        void create_named_variables(const std::vector<std::string> &variable_names);
 
         /**
          * \brief Creates and stores state variables.
@@ -53,7 +55,8 @@
          */
         std::size_t create_state_variables(std::size_t variable_count);
 
-        std::size_t create_named_state_variables(const std::vector<std::string>& variable_names);
+        std::size_t create_named_state_variables(const std::vector<std::string> &variable_names);
+
         /**
          * \brief Registers a new automaton ID associated with a product state space.
          *
@@ -67,7 +70,7 @@
          *   the automata whose IDs were provided in \a automaton_ids.
          */
         std::size_t create_product_state_space(
-                const std::vector<std::size_t>& automaton_ids);
+                const std::vector<std::size_t> &automaton_ids);
 
         std::size_t create_complement_state_space(
                 const std::size_t automaton_id);
@@ -88,7 +91,7 @@
          *   is the i-th state variable of the automaton with the given ID.
          */
         CUDD::BDD state_vector_to_bdd(std::size_t automaton_id,
-                                      const std::vector<int>& state_vector) const;
+                                      const std::vector<int> &state_vector) const;
 
         /**
          * \brief Partitions the named variables between inputs and outputs.
@@ -98,8 +101,8 @@
          * \param output_names The names of the variables that should be considered
          *   outputs.
          */
-        void partition_variables(const std::vector<std::string>& input_names,
-                                 const std::vector<std::string>& output_names);
+        void partition_variables(const std::vector<std::string> &input_names,
+                                 const std::vector<std::string> &output_names);
 
         /**
          * \brief Returns the CUDD manager used to create the variables.
@@ -109,7 +112,7 @@
         /**
          * \brief Returns the index of the variable with the given name.
          */
-        CUDD::BDD name_to_variable(const std::string& name) const;
+        CUDD::BDD name_to_variable(const std::string &name) const;
 
         /**
          * \brief Returns the name of the variable at index \a index.
@@ -168,7 +171,7 @@
          *   Indices corresponding to other variables have a 0.
          */
         std::vector<int> make_eval_vector(std::size_t automaton_id,
-                                          const std::vector<int>& state_vector) const;
+                                          const std::vector<int> &state_vector) const;
 
         /**
        * \brief Creates a valid input to CUDD::BDD::Eval.
@@ -182,7 +185,7 @@
        *   Indices corresponding to other variables have a 0.
        */
         std::vector<int> make_state_eval_vector(std::size_t automaton_id,
-                                                const std::vector<int>& state_vector) const;
+                                                const std::vector<int> &state_vector) const;
 
         /**
          * \brief Creates a valid input to CUDD::BDD::VectorCompose.
@@ -198,7 +201,7 @@
          */
         std::vector<CUDD::BDD> make_compose_vector(
                 std::size_t automaton_id,
-                const std::vector<CUDD::BDD>& state_bdds) const;
+                const std::vector<CUDD::BDD> &state_bdds) const;
 
         /**
          * \brief Returns a vector with a label for each variable.
@@ -251,7 +254,7 @@
          *
          * \param An ADD \a add and \a filename.
          */
-        void dump_dot(const CUDD::ADD& add, const std::string& filename) const;
+        void dump_dot(const CUDD::ADD &add, const std::string &filename) const;
 
         /**
          * \brief Saves ADDs to a .dot file with corresponding labels.
@@ -262,15 +265,15 @@
          *   in the file.
          * \param filename The name of the .dot file.
          */
-        void dump_dot(const std::vector<CUDD::ADD>& adds,
-                      const std::vector<std::string>& function_labels,
-                      const std::string& filename) const;
+        void dump_dot(const std::vector<CUDD::ADD> &adds,
+                      const std::vector<std::string> &function_labels,
+                      const std::string &filename) const;
 
         /**
          * \brief Returns the number of DFAs the manager handles.
          *
          */
-        std::size_t  automaton_num () const;
+        std::size_t automaton_num() const;
 
         /**
        * \brief Prints a BDD as a Boolean formula, where each variable has a specific label.
@@ -278,11 +281,11 @@
        * \param A given BDD.
        * \return A string that represents a Boolean formula.
        */
-        std::string bdd_to_string(const CUDD::BDD& bdd) const;
+        std::string bdd_to_string(const CUDD::BDD &bdd) const;
 
     };
 
 
-
+}
 
 #endif //SYNTH_GAME_VARMGR_HPP

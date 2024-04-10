@@ -8,7 +8,7 @@
 #include <sstream>
 #include <algorithm>
 
-
+namespace synth {
 varmgr::varmgr() {
     mgr_ = std::make_shared<CUDD::Cudd>();
 }
@@ -400,4 +400,6 @@ std::string varmgr::bdd_to_string(const CUDD::BDD& bdd) const {
     }
 
     return s;
+}
+
 }

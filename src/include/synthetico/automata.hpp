@@ -27,7 +27,7 @@
 
 #include <black/logic/logic.hpp>
 
-#include <synthetico/synthetico.hpp>
+#include "synthetico.hpp"
 
 namespace synth {
   

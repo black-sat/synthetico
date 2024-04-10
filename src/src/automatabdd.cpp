@@ -2,7 +2,7 @@
 // Created by shuzhu on 08/04/24.
 //
 
-#include <synthetico/automatabdd.hpp>
+#include "synthetico/automatabdd.hpp"
 
 #include <black/logic/prettyprint.hpp>
 
@@ -24,7 +24,7 @@ namespace synth {
 
             static bformula snf(formula<pLTL> f);
 
-            automatabdd encodebdd(spec sp);
+            static CUDD::BDD formula_to_bdd(bformula f, std::shared_ptr<varmgr> var_mgr);
 
             std::vector<logic::yesterday<pLTL>> yreqs;
             std::vector<logic::w_yesterday<pLTL>> zreqs;
@@ -206,6 +206,31 @@ namespace synth {
             );
         }
 
+        CUDD::BDD encoderbdd::formula_to_bdd(bformula f, std::shared_ptr<varmgr> var_mgr) {
+            CUDD::BDD con_bdd = f.match(
+                    [&var_mgr](logic::boolean b) {
+                        std::string name = to_string(b);
+                        if (name == "True")
+                            return var_mgr->cudd_mgr()->bddOne();
+                        else
+                            return var_mgr->cudd_mgr()->bddZero(); },
+                    [&var_mgr](logic::proposition p) {
+                        std::string name = to_string(p);
+                        return var_mgr->name_to_variable(name); },
+                    [&var_mgr](logic::negation<Bool>, auto arg) {
+                        return !formula_to_bdd(arg, var_mgr);
+                    },
+                    [&var_mgr](logic::disjunction<Bool>, auto left, auto right) {
+                        return formula_to_bdd(left, var_mgr) | formula_to_bdd(right, var_mgr);
+                    },
+                    [&var_mgr](logic::conjunction<Bool>, auto left, auto right) {
+                        return formula_to_bdd(left, var_mgr) & formula_to_bdd(right, var_mgr);
+                    },
+                    [](logic::implication<Bool>) -> CUDD::BDD { black_unreachable(); },
+                    [](logic::iff<Bool>) -> CUDD::BDD { black_unreachable(); }
+            );
+            return con_bdd;
+        }
 
         automatabdd encoderbdd::encodebdd(spec sp, std::shared_ptr<varmgr> var_mgr) {
             logic::alphabet &sigma = *sp.formula.sigma();
@@ -254,8 +279,6 @@ namespace synth {
                         return !ground(req);
                     });
 
-            std::vector<CUDD::BDD> transition_function;
-            transition_function.push_back(var_mgr->cudd_mgr()->bddOne());
 
             bformula trans = big_and(sigma, variables, [](proposition var) {
                 auto req = lift(var).to<logic::unary<pLTL>>();
@@ -268,10 +291,16 @@ namespace synth {
                 return logic::iff(primed(var), snf(req->argument()));
             });
 
+
+            std::vector<CUDD::BDD> transition_function;
+
             for (auto var : variables){
                 auto req = lift(var).to<logic::unary<pLTL>>();
                 auto con = snf(req->argument());
+
                 std::cerr << to_string(con) << "\n";
+
+                transition_function.push_back(formula_to_bdd(con, var_mgr));
                 //TODO
                 //convert propositional formula con to BDD
             }

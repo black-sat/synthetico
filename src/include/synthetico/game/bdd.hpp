@@ -6,12 +6,13 @@
 #define SYNTH_GAME_BDD_HPP
 
 
-#include <synthetico/synthetico.hpp>
+#include "synthetico/synthetico.hpp"
 
 namespace synth {
 
     black::tribool is_realizable_bdd(spec sp);
 
 }
+
 
 #endif //SYNTH_GAME_BDD_HPP
