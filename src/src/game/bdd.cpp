@@ -50,7 +50,8 @@ namespace synth {
         DfaGameSynthesizer(automatabdd aut, Player starting_player);
 
 
-        SynthesisResult run(const CUDD::BDD& goal_states);
+        SynthesisResult run_reachability(const CUDD::BDD& goal_states);
+        SynthesisResult run_safety(const CUDD::BDD& goal_states);
     };
 
     DfaGameSynthesizer::DfaGameSynthesizer(automatabdd aut, Player starting_player){
@@ -155,7 +156,7 @@ namespace synth {
     }
      */
 
-    SynthesisResult DfaGameSynthesizer::run(const CUDD::BDD& goal_states_) {
+    SynthesisResult DfaGameSynthesizer::run_reachability(const CUDD::BDD& goal_states_) {
         SynthesisResult result;
         CUDD::BDD winning_states = goal_states_;
         CUDD::BDD winning_moves = winning_states;
@@ -198,19 +199,60 @@ namespace synth {
 
     }
 
-    static constexpr bool debug = true;
+    SynthesisResult DfaGameSynthesizer::run_safety(const CUDD::BDD &goal_states) {
+        SynthesisResult result;
+        CUDD::BDD candidate_winning_states = goal_states;
+        CUDD::BDD candidate_winning_moves = candidate_winning_states;
+//        std::cout<<candidate_winning_moves<<std::endl;
+
+        while (true) {
+            CUDD::BDD new_candidate_winning_moves = candidate_winning_moves & preimage(candidate_winning_states);
+
+            CUDD::BDD new_candidate_winning_states = project_into_states(new_candidate_winning_moves);
+//            std::cout<<new_candidate_winning_moves<<std::endl;
+//            std::cout<<new_candidate_winning_states<<std::endl;
+
+            if (!includes_initial_state(new_candidate_winning_states)) {
+                result.realizability = false;
+                result.winning_states = var_mgr_->cudd_mgr()->bddZero(); // the set of candidate_winning_states is not exactly winning states
+                result.winning_moves = var_mgr_->cudd_mgr()->bddZero();
+                result.transducer = nullptr;
+                return result;
+
+            } else if (new_candidate_winning_states == candidate_winning_states) {
+                result.realizability = true;
+                result.winning_states = new_candidate_winning_states;
+                result.winning_moves = new_candidate_winning_moves;
+                result.transducer = nullptr;
+                return result;
+            }
+
+            candidate_winning_moves = new_candidate_winning_moves;
+            candidate_winning_states = new_candidate_winning_states;
+        }
+    }
+
+    static constexpr bool debug = false;
 
     black::tribool is_realizable_bdd(spec sp) {
 
 //        logic::alphabet &sigma = *sp.formula.sigma();
         std::shared_ptr<varmgr> var_mgr = std::make_shared<varmgr>();
         automatabdd aut = encodebdd(sp, var_mgr);
-        Player starting_player = Player::Agent;
 
         if(debug)
             std::cerr << aut << "\n";
-        DfaGameSynthesizer dfagame(aut, starting_player);
-        SynthesisResult res = dfagame.run(aut.final_states_);
+        DfaGameSynthesizer dfagame(aut, Player::Agent);
+        SynthesisResult res;
+        sp.type.match(
+                [&](game_t::eventually) {
+                    res = dfagame.run_reachability(aut.final_states_);
+                },
+                [&](game_t::always) {
+                    res = dfagame.run_safety(aut.final_states_);
+                }
+        );
+
         return res.realizability;
     }
 

@@ -33,6 +33,8 @@ namespace synth {
             automatabdd encodebdd(spec sp, std::shared_ptr<varmgr> var_mgr);
         };
 
+        static constexpr bool debug = false;
+
         formula<pLTL> encoderbdd::nnf(formula<pLTL> f) {
             return f.match(
                     [](logic::boolean b) { return b; },
@@ -237,6 +239,7 @@ namespace synth {
             sp.formula = encoderbdd::nnf(sp.formula);
 
             collect(sp);
+
             std::vector<std::string> ins, outs;
             for (auto prop : sp.inputs){
                 ins.push_back(to_string(prop));
@@ -249,25 +252,36 @@ namespace synth {
             var_mgr->create_named_variables(outs);
 
             var_mgr->partition_variables(ins, outs);
-            std::vector<int> initial_state;
 
-            for (size_t i = 0; i < zreqs.size(); i++){
-                initial_state.push_back(1);
-            }
-            for (size_t i = 0; i < yreqs.size(); i++){
-                initial_state.push_back(0);
-            }
-
-            black_assert(initial_state.size() == variables.size());
 
             std::vector<std::string> state_vars;
+            std::vector<int> initial_state;
+
+            std::vector<std::string> yprops;
+            std::vector<std::string> zprops;
+
+            for (size_t i = 0; i < zreqs.size(); i++){
+                zprops.push_back(to_string(ground(zreqs[i])));
+
+            }
+            for (size_t i = 0; i < yreqs.size(); i++){
+                yprops.push_back(to_string(ground(yreqs[i])));
+            }
+
             for (auto prop : variables){
-                state_vars.push_back(to_string(prop));
+                std::string var_name = to_string(prop);
+                state_vars.push_back(var_name);
+                if (std::find(zprops.begin(), zprops.end(), var_name) != zprops.end()){
+                    initial_state.push_back(1);
+                } else {
+                    initial_state.push_back(0);
+                }
             }
 
             for (size_t i = 0; i < variables.size(); i++){
                 black_assert(state_vars[i] == to_string(variables[i]));
             }
+
 
             size_t automata_id = var_mgr->create_named_state_variables(state_vars);
 
@@ -282,12 +296,16 @@ namespace synth {
 
             bformula trans = big_and(sigma, variables, [](proposition var) {
                 auto req = lift(var).to<logic::unary<pLTL>>();
-                std::cerr << to_string(var) << "\n";
-                std::cerr << to_string(req->argument()) << "\n";
-                std::cerr << to_string(snf(req->argument())) << "\n";
-                std::cerr << to_string(primed(var)) << "\n";
+                if (debug) {
+                    std::cerr << to_string(var) << "\n";
+                    std::cerr << to_string(req->argument()) << "\n";
+                    std::cerr << to_string(snf(req->argument())) << "\n";
+                    std::cerr << to_string(primed(var)) << "\n";
+                }
                 black_assert(req);
-                std::cerr << to_string(logic::iff(primed(var), snf(req->argument()))) << "\n";
+                if (debug) {
+                    std::cerr << to_string(logic::iff(primed(var), snf(req->argument()))) << "\n";
+                }
                 return logic::iff(primed(var), snf(req->argument()));
             });
 
@@ -297,12 +315,10 @@ namespace synth {
             for (auto var : variables){
                 auto req = lift(var).to<logic::unary<pLTL>>();
                 auto con = snf(req->argument());
-
-                std::cerr << to_string(con) << "\n";
-
+                if (debug) {
+                    std::cerr << to_string(con) << "\n";
+                }
                 transition_function.push_back(formula_to_bdd(con, var_mgr));
-                //TODO
-                //convert propositional formula con to BDD
             }
 
             bformula objective = sp.type.match(
