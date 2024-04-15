@@ -89,7 +89,7 @@ namespace synth {
           return arg.match(
             [](logic::boolean b) { return b.sigma()->boolean(!b.value()); },
             [](logic::proposition p) { return !p; },
-            [](logic::negation<pLTL>, auto op) { return op; },
+            [](logic::negation<pLTL>, auto op) { return nnf(op); },
             [](logic::disjunction<pLTL>, auto left, auto right) {
               return nnf(!left) && nnf(!right);
             },

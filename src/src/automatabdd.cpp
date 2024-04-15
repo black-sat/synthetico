@@ -73,7 +73,7 @@ namespace synth {
                         return arg.match(
                                 [](logic::boolean b) { return b.sigma()->boolean(!b.value()); },
                                 [](logic::proposition p) { return !p; },
-                                [](logic::negation<pLTL>, auto op) { return op; },
+                                [](logic::negation<pLTL>, auto op) { return nnf(op); },
                                 [](logic::disjunction<pLTL>, auto left, auto right) {
                                     return nnf(!left) && nnf(!right);
                                 },
@@ -237,7 +237,6 @@ namespace synth {
         automatabdd encoderbdd::encodebdd(spec sp, std::shared_ptr<varmgr> var_mgr) {
 //            logic::alphabet &sigma = *sp.formula.sigma();
             sp.formula = encoderbdd::nnf(sp.formula);
-
             collect(sp);
 
             std::vector<std::string> ins, outs;
