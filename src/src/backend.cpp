@@ -22,7 +22,7 @@
 // SOFTWARE.
 //
 
-#include <synthetico/synthetico.hpp>
+#include "synthetico/synthetico.hpp"
 
 #include <unistd.h>
 #include <fcntl.h>

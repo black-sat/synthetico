@@ -25,13 +25,19 @@
 #ifndef SYNTH_SYNTH_HPP
 #define SYNTH_SYNTH_HPP
 
-#include <synthetico/common.hpp>
-#include <synthetico/spec.hpp>
-#include <synthetico/automata.hpp>
-#include <synthetico/qbf.hpp>
-#include <synthetico/backend.hpp>
-#include <synthetico/random.hpp>
-#include <synthetico/game/novel.hpp>
-#include <synthetico/game/classic.hpp>
+#include "synthetico/common.hpp"
+#include "synthetico/spec.hpp"
+#include "synthetico/automata.hpp"
+#include "automatabdd.hpp"
+#include "transducer.hpp"
+#include "quantification.hpp"
+#include "varmgr.hpp"
+#include "synthetico/qbf.hpp"
+#include "synthetico/backend.hpp"
+#include "synthetico/random.hpp"
+#include "synthetico/game/novel.hpp"
+#include "synthetico/game/classic.hpp"
+#include "synthetico/game/bdd.hpp"
+
 
 #endif // SYNTH_SYNTH_HPP

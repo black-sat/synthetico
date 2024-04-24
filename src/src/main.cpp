@@ -24,7 +24,7 @@
 
 #include <black/logic/logic.hpp>
 
-#include <synthetico/synthetico.hpp>
+#include "synthetico/synthetico.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -32,7 +32,8 @@
 
 enum class algorithm {
   classic,
-  novel
+  novel,
+  bdd
 };
 
 static char *argv0 = nullptr;
@@ -41,7 +42,7 @@ static char *argv0 = nullptr;
 static void error(std::string err) {
   std::cerr << argv0 << ": error: " + err + "\n";
   std::cerr << argv0 << ": usage: " << argv0;
-  std::cerr << " <classic|novel> <formula> [input 1] [input 2] ..."
+  std::cerr << " <classic|novel|bdd> <formula> [input 1] [input 2] ..."
                 " [input n]\n";
   std::cerr << argv0 << ": usage: " << argv0;
   std::cerr << " <random> <n formulas> <n vars> <size> <seed>\n";
@@ -56,6 +57,8 @@ static algorithm to_algo(std::string algos) {
     return algorithm::classic;
   else if(algos == "novel"s)
     return algorithm::novel;
+  else if(algos == "bdd"s)
+      return algorithm::bdd;
   else
     error("unknown algorithm");
 }
@@ -66,6 +69,8 @@ static std::string to_string(algorithm algo) {
       return "classic";
     case algorithm::novel:
       return "novel";
+    case algorithm::bdd:
+      return "bdd";
   }
   black_unreachable();
 }
@@ -82,6 +87,9 @@ static int solve(synth::spec spec, algorithm algo) {
         break;
       case algorithm::novel:
         result = is_realizable_novel(spec);
+        break;
+      case algorithm::bdd:
+        result = is_realizable_bdd(spec);
         break;
     }
   } catch(std::exception const& ex) {
@@ -157,7 +165,7 @@ static int formula(int argc, char **argv) {
     error("insufficient command-line arguments");
 
   algorithm algo = to_algo(argv[1]);
-  
+
   black::alphabet sigma;
 
   synth::spec spec = *synth::parse(sigma, argc - 1, argv + 1, error);

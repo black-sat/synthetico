@@ -42,6 +42,7 @@ include(CheckIPOSupported) # Check if we can do LTO
 
 # dependencies
 find_package(black 0.9.2 REQUIRED)
+find_package(cudd REQUIRED)
 
 #
 # Fix the RPATH for the installation 

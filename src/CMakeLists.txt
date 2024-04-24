@@ -27,21 +27,27 @@ set (
   src/common.cpp
   src/spec.cpp
   src/automata.cpp
+  src/automatabdd.cpp
+  src/varmgr.cpp
   src/qbf.cpp
   src/backend.cpp
   src/random.cpp
   src/game/novel.cpp
   src/game/classic.cpp
+        src/game/bdd.cpp
+  src/transducer.cpp
+  src/quantification.cpp
 )
 
 add_executable (synthetico ${LIB_SRC})
 
-target_link_libraries(synthetico PUBLIC black::black)
+target_link_libraries(synthetico PUBLIC black::black ${CUDD_LIBRARIES})
 
 target_include_directories(synthetico PUBLIC  
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
   $<INSTALL_INTERFACE:include>
+  ${CUDD_INCLUDE_DIRS}
 )
 
 set_property(TARGET synthetico PROPERTY OUTPUT_NAME synth)

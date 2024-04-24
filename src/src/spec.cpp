@@ -22,7 +22,7 @@
 // SOFTWARE.
 //
 
-#include <synthetico/synthetico.hpp>
+#include "synthetico/synthetico.hpp"
 
 #include <black/logic/logic.hpp>
 #include <black/logic/parser.hpp>

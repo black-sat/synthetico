@@ -22,7 +22,7 @@
 // SOFTWARE.
 //
 
-#include <synthetico/synthetico.hpp>
+#include "synthetico/synthetico.hpp"
 
 #include <functional>
 #include <unordered_set>
@@ -51,7 +51,7 @@ namespace synth {
       automata aut;
     };
 
-    static constexpr bool debug = false;
+    static constexpr bool debug = true;
 
     static qbformula print(std::string name, qbformula f) {
       if(debug)

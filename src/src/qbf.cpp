@@ -22,7 +22,7 @@
 // SOFTWARE.
 //
 
-#include <synthetico/synthetico.hpp>
+#include "synthetico/synthetico.hpp"
 
 #include <black/logic/cnf.hpp>
 #include <black/logic/prettyprint.hpp>
