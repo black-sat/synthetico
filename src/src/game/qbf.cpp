@@ -136,7 +136,7 @@ namespace synth {
 
   static constexpr bool debug = false;
 
-  black::tribool is_realizable_novel(spec sp) {
+  black::tribool is_realizable_qbf(spec sp) {
 
     logic::alphabet &sigma = *sp.formula.sigma();
 

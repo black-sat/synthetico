@@ -22,15 +22,15 @@
 // SOFTWARE.
 //
 
-#ifndef SYNTH_GAME_CLASSIC_HPP
-#define SYNTH_GAME_CLASSIC_HPP
+#ifndef SYNTH_GAME_NOVEL_HPP
+#define SYNTH_GAME_NOVEL_HPP
 
-#include <black/support/tribool.hpp>
+#include "synthetico/synthetico.hpp"
 
 namespace synth {
 
-  black::tribool is_realizable_classic(spec sp);  
+  black::tribool is_realizable_qbf(spec sp);
 
 }
 
-#endif // SYNTH_GAME_CLASSIC_HPP
+#endif // SYNTH_GAME_NOVEL_HPP

@@ -35,8 +35,7 @@
 #include "synthetico/qbf.hpp"
 #include "synthetico/backend.hpp"
 #include "synthetico/random.hpp"
-#include "synthetico/game/novel.hpp"
-#include "synthetico/game/classic.hpp"
+#include "synthetico/game/qbf.hpp"
 #include "synthetico/game/bdd.hpp"
 
 

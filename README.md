@@ -36,7 +36,7 @@ Now, you can run the `synth` executable from the `build` directory.
 The tool expects on the command line the following arguments:
 1. the choice of which algorithm to run:
 
-   a. `novel`, for our novel symbolic tableau-based algorithm
+   a. `qbf`, for our qbf symbolic tableau-based algorithm
    
    b. `classic`, for a classic fixpoint backward reachability algorithm
 3. a $\mathsf{F}(\alpha)$ or $\mathsf{G}(\alpha)$ formula
@@ -48,7 +48,7 @@ The syntax of the formulas is the one accepted by BLACK (see [Input Syntax](http
 
 Examples:
 ```
-$ ./synth novel 'F(u & c)' u
+$ ./synth qbf 'F(u & c)' u
 UNREALIZABLE
 
 $ ./synth classic 'G(u | c)' u
