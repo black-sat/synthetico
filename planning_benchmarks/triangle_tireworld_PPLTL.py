@@ -2,7 +2,7 @@
 ### Based on the translation of triangle_tireworld to LTLf from https://github.com/renzoq/IMS_thesis/blob/main/Python%20domain%20generation/triangle_tireworld_ltlf_generator.ipynb
 
 # give number of layers as input
-number_of_layers = 2
+number_of_layers = 4
 
 
 def generate_states(layers):
@@ -201,6 +201,7 @@ def get_environment_add_del():
 
 
 def get_environment_transitions_PPLTL():
+    formula_list = []
     prec_dictionary = get_agent_preconditions_PPLTL()
     add_list, del_list = get_environment_add_del()
     fluents = get_changable_fluents(node_names)
@@ -212,11 +213,18 @@ def get_environment_transitions_PPLTL():
         for del_action in del_list[fluent]:
             del_action_precondition_list.append("(" + del_action + " & " + prec_dictionary[del_action] + ")")
 
-    activated_by_add_actions = " | ".join(add_action_precondition_list)
-    deactivated_by_del_actions = " | ".join(del_action_precondition_list)
-    formula = "(" + fluent + "<->" + "(Y(" + activated_by_add_actions + ")" + " | " + "Y(" + fluent + " & (!(" + deactivated_by_del_actions + ")))))"
+        activated_by_add_actions = " | ".join(add_action_precondition_list)
+        deactivated_by_del_actions = " | ".join(del_action_precondition_list)
 
-    return formula
+        if activated_by_add_actions == "":
+            formula_list.append("(" + fluent + " <-> " + "Y(" + fluent + " & (!(" + deactivated_by_del_actions + "))))")
+        else:
+            if deactivated_by_del_actions == "":
+                formula_list.append("(" + fluent + " <-> " + "(Y(" + activated_by_add_actions + ")))")
+            else:
+                formula_list.append("(" + fluent + " <-> " + "(Y(" + activated_by_add_actions + ")" + " | " + "Y(" + fluent + " & (!(" + deactivated_by_del_actions + ")))))")
+
+    return formula_list
 
 
 # use this for specifying which fluents never change during a run (like roads)
@@ -275,10 +283,6 @@ add_list, del_list = get_environment_add_del()
 print("add_list: ", add_list)
 print("del_list: ", del_list)
 
-# print out partition file
-print(".inputs: ", " ".join(env_act_list), " flattire", sep='')
-print(".outputs: ", " ".join(agent_act_list), sep='')
-
 # init
 print("(", get_initialization(), ")", sep='')
 # agent
@@ -290,7 +294,13 @@ print("(((", mutual_excl_all_env, ") & ", mutual_excl_comb_env, ") & (", " & ".j
 # goal
 print(get_goal(), sep='')
 
+print("--------------------------------")
+
 # complete formula, written as follows: (H(phi_agent_unique_act) & ((phi_env_init & H(phi_env_transitions_PPLTL)) -> (phi_goal)))
-print("(H((", mutual_excl_all, ") & ", mutual_excl_comb, ")) & (((", get_initialization(), ") & H(((",
-      mutual_excl_all_env, ") & ", mutual_excl_comb_env, ") & (", get_environment_transitions_PPLTL(), ") & ",
+print("PPLTL formula:\n", "F(H((", mutual_excl_all, ") & ", mutual_excl_comb, ") & ((", get_initialization(), ") & H(((",
+      mutual_excl_all_env, ") & ", mutual_excl_comb_env, ") & (", " & ".join(get_environment_transitions_PPLTL()), ") & ",
       get_consistent_fluents_PPLTL(paths), ")) -> (", get_goal(), "))", sep='')
+
+# print out partition file
+print(".inputs:\n", " ".join(env_act_list), " flattire", sep='')
+print(".outputs:\n", " ".join(agent_act_list), sep='')
