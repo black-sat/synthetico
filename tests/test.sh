@@ -19,11 +19,11 @@ tests="$(realpath $2)"
 
 cd "$(git rev-parse --show-toplevel)/build"
 
-echo "Instance novel novel-out classic classic-out"
+echo "Instance novel novel-out bdd bdd-out"
 i=1
 while IFS= read -r in; do 
   echo -n "$i "
-  for algo in novel classic; do 
+  for algo in novel bdd; do 
     time=$( \
       (\time -f %e \
         timeout $timeout \
