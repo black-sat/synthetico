@@ -31,8 +31,7 @@
 #include <string>
 
 enum class algorithm {
-  classic,
-  novel,
+  qbf,
   bdd
 };
 
@@ -42,10 +41,10 @@ static char *argv0 = nullptr;
 static void error(std::string err) {
   std::cerr << argv0 << ": error: " + err + "\n";
   std::cerr << argv0 << ": usage: " << argv0;
-  std::cerr << " <classic|novel|bdd> <formula> [input 1] [input 2] ..."
+  std::cerr << " (qbf|bdd) <formula> [input 1] [input 2] ..."
                 " [input n]\n";
   std::cerr << argv0 << ": usage: " << argv0;
-  std::cerr << " <random> <n formulas> <n vars> <size> <seed>\n";
+  std::cerr << " random <n formulas> <n vars> <size> <seed>\n";
 
   exit(1);
 }
@@ -53,10 +52,8 @@ static void error(std::string err) {
 static algorithm to_algo(std::string algos) {
   using namespace std::literals;
 
-  if(algos == "classic"s)
-    return algorithm::classic;
-  else if(algos == "novel"s)
-    return algorithm::novel;
+  if(algos == "qbf"s)
+    return algorithm::qbf;
   else if(algos == "bdd"s)
       return algorithm::bdd;
   else
@@ -65,10 +62,8 @@ static algorithm to_algo(std::string algos) {
 
 static std::string to_string(algorithm algo) {
   switch(algo) {
-    case algorithm::classic:
-      return "classic";
-    case algorithm::novel:
-      return "novel";
+    case algorithm::qbf:
+      return "qbf";
     case algorithm::bdd:
       return "bdd";
   }
@@ -82,11 +77,8 @@ static int solve(synth::spec spec, algorithm algo) {
     std::cerr << "Solving spec '" << to_string(to_formula(spec)) << "' "
               << "with the '" << to_string(algo) << "' algorithm...\n";
     switch(algo){ 
-      case algorithm::classic:
-        result = is_realizable_classic(spec);
-        break;
-      case algorithm::novel:
-        result = is_realizable_novel(spec);
+      case algorithm::qbf:
+        result = is_realizable_qbf(spec);
         break;
       case algorithm::bdd:
         result = is_realizable_bdd(spec);

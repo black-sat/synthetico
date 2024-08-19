@@ -1,4 +1,4 @@
-Instance novel novel-out bdd bdd-out
+Instance qbf qbf-out bdd bdd-out
 1 1.85 REALIZABLE 0.02 REALIZABLE 
 2 32.25 REALIZABLE 8.60 REALIZABLE 
 3 TIMEOUT TIMEOUT TIMEOUT TIMEOUT

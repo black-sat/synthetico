@@ -1,4 +1,4 @@
-Instance novel novel-out bdd bdd-out
+Instance qbf qbf-out bdd bdd-out
 1 0.38 REALIZABLE 0.01 REALIZABLE 
 2 0.65 REALIZABLE 0.06 REALIZABLE 
 3 1.07 REALIZABLE 0.14 REALIZABLE 

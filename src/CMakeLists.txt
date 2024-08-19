@@ -32,9 +32,8 @@ set (
   src/qbf.cpp
   src/backend.cpp
   src/random.cpp
-  src/game/novel.cpp
-  src/game/classic.cpp
-        src/game/bdd.cpp
+  src/game/qbf.cpp
+  src/game/bdd.cpp
   src/transducer.cpp
   src/quantification.cpp
 )
